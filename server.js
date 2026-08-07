@@ -112,6 +112,22 @@ app.post('/api/admin/config', (req, res) => {
   res.status(400).json({ error: "API key is required." });
 });
 
+// API: Save Email SMTP credentials runtime
+app.post('/api/admin/email-config', (req, res) => {
+  const { doctorEmail, emailPassword, surgeonPhone } = req.body;
+  if (doctorEmail && emailPassword) {
+    process.env.SMTP_USER = doctorEmail;
+    process.env.SMTP_PASS = emailPassword;
+    process.env.SURGEON_EMAIL = doctorEmail;
+    if (surgeonPhone) process.env.SURGEON_PHONE = surgeonPhone;
+    
+    notificationService.setEmailConfig(doctorEmail, emailPassword);
+    console.log(`📧 Doctor Email & SMTP configured for: ${doctorEmail}`);
+    return res.json({ success: true, message: `Live Email Dispatch configured for ${doctorEmail}` });
+  }
+  res.status(400).json({ error: "Doctor email and App password are required." });
+});
+
 // API: Doctor Admin Portal Patient Records
 app.get('/api/admin/records', async (req, res) => {
   try {
@@ -131,6 +147,7 @@ app.get('/api/health', (req, res) => {
     surgeon: process.env.SURGEON_NAME || "Dr. Alexander Wright, BDS",
     integrations: {
       gemini: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
+      emailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
       googleCalendarServiceAccount: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL),
       googleSheets: Boolean(process.env.GOOGLE_SPREADSHEET_ID),
       twilioSms: Boolean(process.env.TWILIO_ACCOUNT_SID)

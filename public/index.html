@@ -33,6 +33,15 @@
     </div>
   </nav>
 
+  <!-- LIVE SOCIAL PROOF TOAST -->
+  <div class="social-proof-toast" id="socialToast">
+    <div class="toast-dot"></div>
+    <div>
+      <strong id="toastName">Sarah J. from Marylebone</strong>
+      <div id="toastAction" style="font-size: 0.78rem; color: var(--text-muted);">Just booked a teeth whitening slot (3 mins ago)</div>
+    </div>
+  </div>
+
   <!-- 2. HERO SECTION (SPLIT LAYOUT) -->
   <header class="hero-section">
     <!-- LEFT COLUMN -->
@@ -129,17 +138,23 @@
     </div>
   </section>
 
-  <!-- 4. INTERACTIVE BEFORE/AFTER PATIENT SHOWCASE -->
+  <!-- 4. INTERACTIVE BEFORE/AFTER PATIENT SHOWCASE WITH DRAGGABLE SLIDER -->
   <section class="section-container" id="showcase">
     <div class="section-header">
       <div class="section-tag">Real Patient Results</div>
-      <h2 class="section-title">Smile Transformations</h2>
-      <p class="section-subtitle">See how our gentle whitening and alignment treatments give patients newfound confidence.</p>
+      <h2 class="section-title">Interactive Smile Transformation</h2>
+      <p class="section-subtitle">Drag the slider left or right to reveal Emily's 6-shade whitening transformation!</p>
     </div>
 
     <div class="showcase-card">
-      <div class="showcase-image-wrapper">
-        <img src="images/whitening_showcase.jpg" alt="Aura Dental Whitening Results" class="showcase-img">
+      <!-- INTERACTIVE COMPARISON SLIDER CONTAINER -->
+      <div class="ba-slider-container">
+        <div class="ba-image-after" style="background-image: url('images/whitening_showcase.jpg');"></div>
+        <div class="ba-image-before" id="baBeforeImage" style="background-image: url('images/whitening_showcase.jpg'); width: 50%; filter: sepia(0.5) contrast(0.85);"></div>
+        <input type="range" min="0" max="100" value="50" class="ba-slider-input" id="baSlider" oninput="updateBeforeAfterSlider(this.value)">
+        <div class="ba-divider" id="baDivider" style="left: 50%;">
+          <div class="ba-handle">↔</div>
+        </div>
       </div>
 
       <div>
@@ -189,14 +204,16 @@
     <div class="drawer-quick-chips">
       <button class="drawer-chip" onclick="sendDrawerChip('Book a Cleaning')">📅 Book a Cleaning</button>
       <button class="drawer-chip" style="color: var(--emergency-red);" onclick="sendDrawerChip('I have a Dental Emergency!')">🚨 Dental Emergency</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Do you accept Private Insurance?')">💳 Private Insurance?</button>
       <button class="drawer-chip" onclick="sendDrawerChip('Where are you located?')">📍 Clinic Location</button>
-      <button class="drawer-chip" onclick="sendDrawerChip('How much is a consultation fee?')">💳 Consultation Fees</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('What if I am nervous?')">🧘 Nervous Patient?</button>
     </div>
 
-    <!-- INPUT FIELD -->
+    <!-- INPUT FIELD WITH VOICE DICTATION (MIC) -->
     <div class="drawer-footer">
       <form id="drawerForm" class="drawer-input-group" onsubmit="handleDrawerChatSubmit(event)">
-        <input type="text" id="drawerInput" class="drawer-input" placeholder="Type your message..." required autocomplete="off">
+        <button type="button" class="btn-mic" id="micBtn" onclick="toggleVoiceDictation()" title="Voice Dictation">🎤</button>
+        <input type="text" id="drawerInput" class="drawer-input" placeholder="Type or speak your message..." required autocomplete="off">
         <button type="submit" class="btn-drawer-send">➔</button>
       </form>
     </div>
@@ -220,8 +237,8 @@
             <input type="tel" id="patientPhone" placeholder="+44 7700 900123" required>
           </div>
           <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" id="patientEmail" placeholder="sarah@example.co.uk" required>
+            <label>Patient Email Address (Receives Confirmation)</label>
+            <input type="email" id="patientEmail" placeholder="patient@example.co.uk" required>
           </div>
           <div class="form-group">
             <label>Select Date & Time Slot</label>
@@ -239,7 +256,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn-primary">Confirm & Dispatch Alerts</button>
+          <button type="submit" class="btn-primary">Confirm & Dispatch Email Alerts</button>
         </div>
       </form>
     </div>

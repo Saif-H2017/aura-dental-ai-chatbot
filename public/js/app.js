@@ -1,5 +1,121 @@
 let chatHistory = [];
 let currentBookingDraft = {};
+let recognition = null;
+
+// Web Audio API Synthesized Chimes (Zero external audio dependency)
+function playAudioChime(type = 'response') {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'emergency') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.2); // E5
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    }
+  } catch (e) {
+    // Audio Context not allowed before user interaction
+  }
+}
+
+// 1. Draggable Before/After Image Comparison Slider
+function updateBeforeAfterSlider(val) {
+  const beforeImg = document.getElementById('baBeforeImage');
+  const divider = document.getElementById('baDivider');
+  if (beforeImg && divider) {
+    beforeImg.style.width = `${val}%`;
+    divider.style.left = `${val}%`;
+  }
+}
+
+// 2. Voice Speech Dictation (Mic)
+function toggleVoiceDictation() {
+  const micBtn = document.getElementById('micBtn');
+  const input = document.getElementById('drawerInput');
+
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert("Speech recognition is not supported in this browser. Try Chrome or Edge!");
+    return;
+  }
+
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+    micBtn.classList.remove('listening');
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-GB';
+
+  micBtn.classList.add('listening');
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    input.value = transcript;
+    micBtn.classList.remove('listening');
+    recognition = null;
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech error:", event.error);
+    micBtn.classList.remove('listening');
+    recognition = null;
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove('listening');
+    recognition = null;
+  };
+
+  recognition.start();
+}
+
+// 3. Social Proof Toasts Rotator
+const TOAST_DATA = [
+  { name: "Sarah J. from Marylebone", action: "Just booked a teeth whitening slot (3 mins ago)" },
+  { name: "Marcus V. from Mayfair", action: "Booked a routine airflow cleaning (12 mins ago)" },
+  { name: "Priya S. from Kensington", action: "Reserved a Same-Day Emergency Slot (18 mins ago)" },
+  { name: "David M. from Fitzrovia", action: "Scheduled an Invisalign consultation (25 mins ago)" }
+];
+
+let toastIdx = 0;
+function rotateSocialToasts() {
+  const toast = document.getElementById('socialToast');
+  if (!toast) return;
+
+  const item = TOAST_DATA[toastIdx % TOAST_DATA.length];
+  document.getElementById('toastName').innerText = item.name;
+  document.getElementById('toastAction').innerText = item.action;
+
+  toast.style.display = 'flex';
+  toast.style.animation = 'none';
+  toast.offsetHeight; // trigger reflow
+  toast.style.animation = 'slideUp 0.4s ease';
+
+  toastIdx++;
+  setTimeout(rotateSocialToasts, 14000);
+}
+setTimeout(rotateSocialToasts, 4000);
 
 // Toggle Floating AI Drawer Overlay
 function toggleAIDrawer() {
@@ -42,10 +158,7 @@ function sendDrawerChip(text) {
 }
 
 async function sendDrawerMessageToBot(text) {
-  // Show 3-dots typing indicator immediately (matching user's design)
   showTypingIndicator();
-
-  // Record start timestamp for minimum 4-second typing feel
   const startTime = Date.now();
 
   try {
@@ -61,20 +174,20 @@ async function sendDrawerMessageToBot(text) {
 
     const data = await res.json();
 
-    // Ensure at least 4 seconds typing animation delay as requested
     const elapsed = Date.now() - startTime;
     const remainingDelay = Math.max(0, 4000 - elapsed);
     await new Promise(resolve => setTimeout(resolve, remainingDelay));
 
-    // Remove typing indicator
     removeTypingIndicator();
 
     chatHistory.push({ role: 'user', content: text });
     chatHistory.push({ role: 'bot', content: data.reply });
 
     if (data.requiresEmergencyRouting) {
+      playAudioChime('emergency');
       appendDrawerBubble(data.reply, 'critical-alert');
     } else {
+      playAudioChime('response');
       appendDrawerBubble(data.reply, 'bot');
     }
 
@@ -93,7 +206,7 @@ async function sendDrawerMessageToBot(text) {
 }
 
 function showTypingIndicator() {
-  removeTypingIndicator(); // Ensure no duplicates
+  removeTypingIndicator();
   const body = document.getElementById('drawerChatBody');
   const typingDiv = document.createElement('div');
   typingDiv.id = 'typingIndicator';
@@ -151,7 +264,7 @@ async function submitFinalBooking(e) {
   await new Promise(resolve => setTimeout(resolve, 3000));
   removeTypingIndicator();
 
-  appendDrawerBubble(`⏳ Securing slot for ${name}... Checking Google Calendar & dispatching doctor mobile alerts...`, 'bot');
+  appendDrawerBubble(`⏳ Securing slot for ${name}... Dispatching emails to Doctor & Patient...`, 'bot');
 
   try {
     const res = await fetch('/api/appointments/book', {
@@ -171,15 +284,16 @@ async function submitFinalBooking(e) {
     const data = await res.json();
 
     if (data.success) {
+      playAudioChime('response');
       const confirmHtml = `
 🎉 **APPOINTMENT CONFIRMED AT AURA DENTAL!**\n
 - **Ref ID**: \`${data.bookingId}\`
 - **Patient**: ${name}
 - **Slot**: ${data.date} at ${data.time}
 - **Clinic**: 72 Harley Street, London W1G 7HG\n
-📱 **Notification Status**:
-- Doctor Mobile Alert: **${data.notifications[0]?.status || 'Dispatched'}**
-- Patient Email & WhatsApp: **${data.notifications[2]?.status || 'Sent'}**\n
+✉️ **Email Dispatch Status**:
+- Confirmation Email to Patient (${email}): **${data.notifications[1]?.status || 'Sent'}**
+- Booking Alert to Doctor: **${data.notifications[2]?.status || 'Sent'}**\n
 Dr. Alexander Wright and the Aura Dental team look forward to seeing you!
       `;
       appendDrawerBubble(confirmHtml, 'bot');

@@ -73,7 +73,7 @@
       padding: 1.8rem;
       border: 1px solid rgba(15, 23, 42, 0.08);
       box-shadow: var(--card-shadow);
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
   </style>
 </head>
@@ -97,7 +97,23 @@
 
   <div class="admin-container">
     
-    <!-- GEMINI LIVE API KEY SETUP CARD -->
+    <!-- 1. DUAL EMAIL CONFIGURATION CARD (DOCTOR & PATIENT DISPATCH) -->
+    <div class="config-card" style="border-left: 4px solid var(--routine-green);">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
+        ✉️ Dual Email Dispatch Settings (Doctor ➔ Patient & AI ➔ Doctor Alert)
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Enter your Doctor Gmail address & App Password below. The system will send confirmation emails <strong>FROM this Doctor email TO your Patient email</strong>, and send alert emails <strong>TO your Doctor email</strong> whenever a booking happens!
+      </p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem;">
+        <input type="email" id="docEmailInput" placeholder="Doctor Email (e.g. dr.wright@gmail.com)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <input type="password" id="docPassInput" placeholder="Gmail App Password (16 chars)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <button class="btn-primary" style="background: var(--routine-green);" onclick="saveEmailConfig()">Save & Connect Email</button>
+      </div>
+      <div id="emailConfigStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
+    </div>
+
+    <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
     <div class="config-card">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
         🔑 Connect Live Gemini AI Engine
@@ -204,6 +220,37 @@
   </div>
 
   <script>
+    async function saveEmailConfig() {
+      const doctorEmail = document.getElementById('docEmailInput').value.trim();
+      const emailPassword = document.getElementById('docPassInput').value.trim();
+      const statusDiv = document.getElementById('emailConfigStatus');
+
+      if (!doctorEmail || !emailPassword) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = 'Please enter both your Doctor Gmail address and 16-character App Password.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/email-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doctorEmail, emailPassword })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusDiv.style.color = 'var(--routine-green)';
+          statusDiv.innerText = '✅ Live Email Dispatch connected for ' + doctorEmail + '!';
+        } else {
+          statusDiv.style.color = 'var(--emergency-red)';
+          statusDiv.innerText = '⚠️ Error saving email config: ' + data.error;
+        }
+      } catch (e) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '⚠️ Connection error while saving email settings.';
+      }
+    }
+
     async function saveGeminiKey() {
       const apiKey = document.getElementById('geminiKeyInput').value.trim();
       const statusDiv = document.getElementById('configStatus');
@@ -266,7 +313,6 @@
       }
     }
 
-    // Initial load
     fetchAdminRecords();
   </script>
 </body>
