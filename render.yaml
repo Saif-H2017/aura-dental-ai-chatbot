@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: aura-dental-studio
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: APP_MODE
+        value: demo
+      - key: CLINIC_NAME
+        value: "Aura Dental Studio London"
+      - key: SURGEON_NAME
+        value: "Dr. Alexander Wright, BDS"

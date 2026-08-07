@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dr. Wright's Surgeon Portal | Aura Dental Studio London</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .admin-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: var(--card-shadow);
+    }
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--brand-navy);
+      margin-top: 0.4rem;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 2.5rem;
+    }
+    .data-table th, .data-table td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      font-size: 0.88rem;
+    }
+    .data-table th {
+      background: var(--bg-soft-gray);
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .badge-emergency {
+      background: var(--emergency-bg);
+      color: var(--emergency-red);
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-routine {
+      background: var(--accent-cyan-light);
+      color: var(--brand-navy);
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .config-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 1.8rem;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="#" class="brand-logo">
+      <span class="brand-icon">👨‍⚕️</span>
+      <div>
+        <div class="brand-name">SURGEON PORTAL & TRIAGE</div>
+        <div class="brand-tag">Dr. Alexander Wright • Aura Dental Studio</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <button class="btn-primary" onclick="fetchAdminRecords()">🔄 Refresh Logs</button>
+      <a href="index.html" class="btn-secondary-outline">🌐 Aura Dental Website</a>
+    </div>
+  </nav>
+
+  <div class="admin-container">
+    
+    <!-- GEMINI LIVE API KEY SETUP CARD -->
+    <div class="config-card">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
+        🔑 Connect Live Gemini AI Engine
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Paste your Gemini API key (from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>) to enable 100% dynamic, unconstrained AI conversations.
+      </p>
+      <div style="display: flex; gap: 0.75rem; max-width: 650px;">
+        <input type="password" id="geminiKeyInput" placeholder="Paste your AI Studio Gemini API Key here (AIzaSy...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <button class="btn-primary" onclick="saveGeminiKey()">Save Key</button>
+      </div>
+      <div id="configStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
+    </div>
+
+    <!-- STATS OVERVIEW -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Total Appointments</div>
+        <div class="stat-val" id="totalCount">1</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Urgent Triage Alerts</div>
+        <div class="stat-val" style="color: var(--emergency-red);" id="urgentCount">1</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Google Calendar Sync</div>
+        <div class="stat-val" style="color: var(--routine-green); font-size: 1.2rem; margin-top: 0.8rem;">🟢 Connected</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Google Sheets Database</div>
+        <div class="stat-val" style="color: var(--routine-green); font-size: 1.2rem; margin-top: 0.8rem;">🟢 Active Log</div>
+      </div>
+    </div>
+
+    <!-- RECENT BOOKINGS TABLE -->
+    <h2 style="font-size: 1.3rem; margin-bottom: 1rem; color: var(--brand-navy); font-weight: 800;">📋 Patient Booking & Triage Logs</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ref ID</th>
+          <th>Patient Name</th>
+          <th>Phone / Contact</th>
+          <th>Date & Time</th>
+          <th>Triage Severity</th>
+          <th>Symptoms & Pain Notes</th>
+          <th>Doctor Mobile Alert</th>
+        </tr>
+      </thead>
+      <tbody id="recordsTableBody">
+        <tr>
+          <td><code>LND-DEN-882103</code></td>
+          <td>Sarah Jenkins</td>
+          <td>+44 7700 900123</td>
+          <td>2026-08-08 @ 11:00 AM</td>
+          <td><span class="badge-emergency">🚨 URGENT (8/10 Pain)</span></td>
+          <td>Severe throbbing pain in upper right molar</td>
+          <td>🟢 SENT (Priority SMS & WhatsApp)</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <script>
+    async function saveGeminiKey() {
+      const apiKey = document.getElementById('geminiKeyInput').value.trim();
+      const statusDiv = document.getElementById('configStatus');
+      if (!apiKey) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = 'Please enter a valid Gemini API key.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusDiv.style.color = 'var(--routine-green)';
+          statusDiv.innerText = '✅ Gemini API key saved! Live AI engine is now active.';
+          document.getElementById('geminiKeyInput').value = '';
+        } else {
+          statusDiv.style.color = 'var(--emergency-red)';
+          statusDiv.innerText = '⚠️ Error saving key: ' + data.error;
+        }
+      } catch (e) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '⚠️ Connection error while saving key.';
+      }
+    }
+
+    async function fetchAdminRecords() {
+      try {
+        const res = await fetch('/api/admin/records');
+        const data = await res.json();
+        const records = data.records || [];
+        
+        document.getElementById('totalCount').innerText = records.length;
+        const urgent = records.filter(r => r.triageCategory === 'SAME_DAY_URGENT' || r.triageCategory === 'CRITICAL_EMERGENCY').length;
+        document.getElementById('urgentCount').innerText = urgent;
+
+        const tbody = document.getElementById('recordsTableBody');
+        tbody.innerHTML = records.map(r => `
+          <tr>
+            <td><code>${r.bookingId}</code></td>
+            <td><strong>${r.patientName}</strong></td>
+            <td>${r.patientPhone}<br><small style="color:#64748B">${r.patientEmail}</small></td>
+            <td>${r.date} @ ${r.time}</td>
+            <td>
+              <span class="${r.triageCategory.includes('URGENT') ? 'badge-emergency' : 'badge-routine'}">
+                ${r.triageCategory}
+              </span>
+            </td>
+            <td>${r.symptoms}</td>
+            <td>${r.doctorAlertSent}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error("Failed to load records:", err);
+      }
+    }
+
+    // Initial load
+    fetchAdminRecords();
+  </script>
+</body>
+</html>
