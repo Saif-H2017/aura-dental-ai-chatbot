@@ -54,7 +54,6 @@ app.post('/api/appointments/book', async (req, res) => {
       return res.status(400).json({ error: "Missing required patient or slot details." });
     }
 
-    // Evaluate Clinical Triage
     const triageLevel = evaluateTriage(symptoms || "", painScore);
 
     const bookingPayload = {
@@ -68,17 +67,14 @@ app.post('/api/appointments/book', async (req, res) => {
       painScore: painScore || 0
     };
 
-    // 1. Book in Google Calendar
     const calendarResult = await googleCalendarService.bookAppointment(bookingPayload);
 
-    // 2. Log in Google Sheets Database
     const sheetsResult = await googleSheetsService.logAppointment({
       ...bookingPayload,
       bookingId: calendarResult.bookingId,
       isEmergency: calendarResult.isEmergency
     });
 
-    // 3. Dispatch SMS / WhatsApp to Doctor Phone & Patient Confirmation
     const notificationResult = await notificationService.sendAppointmentNotifications({
       ...bookingPayload,
       bookingId: calendarResult.bookingId,
@@ -142,10 +138,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n==================================================`);
-  console.log(`✨ AURA DENTAL STUDIO AI BACKEND RUNNING`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`👨‍⚕️ Surgeon Admin Portal: http://localhost:${PORT}/admin.html`);
-  console.log(`==================================================\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n==================================================`);
+    console.log(`✨ AURA DENTAL STUDIO AI BACKEND RUNNING`);
+    console.log(`📍 URL: http://localhost:${PORT}`);
+    console.log(`👨‍⚕️ Surgeon Admin Portal: http://localhost:${PORT}/admin.html`);
+    console.log(`==================================================\n`);
+  });
+}
+
+module.exports = app;
