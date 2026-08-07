@@ -14,7 +14,18 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Universal static file resolver using process.cwd() for Vercel compatibility
+const publicDir = path.join(process.cwd(), 'public');
+app.use(express.static(publicDir));
+
+// Explicit route for Doctor Admin Portal
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(publicDir, 'admin.html'));
+});
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(publicDir, 'admin.html'));
+});
 
 // API: Process Chat Message with Gemini & Triage Engine
 app.post('/api/chat', async (req, res) => {
@@ -160,7 +171,7 @@ if (require.main === module) {
     console.log(`\n==================================================`);
     console.log(`✨ AURA DENTAL STUDIO AI BACKEND RUNNING`);
     console.log(`📍 URL: http://localhost:${PORT}`);
-    console.log(`👨‍⚕️ Surgeon Admin Portal: http://localhost:${PORT}/admin.html`);
+    console.log(`👨‍⚕️ Doctor Admin Portal: http://localhost:${PORT}/admin.html`);
     console.log(`==================================================\n`);
   });
 }
