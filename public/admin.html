@@ -89,6 +89,7 @@
       </div>
     </a>
     <div class="nav-links">
+      <a href="Aura_Dental_Patient_Records.csv" download class="btn-primary" style="background: var(--routine-green);">📥 Export Google Sheet (.CSV)</a>
       <button class="btn-primary" onclick="fetchAdminRecords()">🔄 Refresh Logs</button>
       <a href="index.html" class="btn-secondary-outline">🌐 Aura Dental Website</a>
     </div>
@@ -115,11 +116,11 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div style="font-size: 0.8rem; color: var(--text-muted);">Total Appointments</div>
-        <div class="stat-val" id="totalCount">1</div>
+        <div class="stat-val" id="totalCount">5</div>
       </div>
       <div class="stat-card">
         <div style="font-size: 0.8rem; color: var(--text-muted);">Urgent Triage Alerts</div>
-        <div class="stat-val" style="color: var(--emergency-red);" id="urgentCount">1</div>
+        <div class="stat-val" style="color: var(--emergency-red);" id="urgentCount">2</div>
       </div>
       <div class="stat-card">
         <div style="font-size: 0.8rem; color: var(--text-muted);">Google Calendar Sync</div>
@@ -132,7 +133,13 @@
     </div>
 
     <!-- RECENT BOOKINGS TABLE -->
-    <h2 style="font-size: 1.3rem; margin-bottom: 1rem; color: var(--brand-navy); font-weight: 800;">📋 Patient Booking & Triage Logs</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 style="font-size: 1.3rem; color: var(--brand-navy); font-weight: 800;">📋 Patient Booking & Triage Logs</h2>
+      <a href="Aura_Dental_Patient_Records.csv" download style="color: var(--brand-navy); font-weight: 700; font-size: 0.9rem; text-decoration: underline;">
+        Download pre-filled Google Sheet CSV file
+      </a>
+    </div>
+
     <table class="data-table">
       <thead>
         <tr>
@@ -149,11 +156,47 @@
         <tr>
           <td><code>LND-DEN-882103</code></td>
           <td>Sarah Jenkins</td>
-          <td>+44 7700 900123</td>
+          <td>+44 7700 900123<br><small style="color:#64748B">sarah.j@example.co.uk</small></td>
           <td>2026-08-08 @ 11:00 AM</td>
-          <td><span class="badge-emergency">🚨 URGENT (8/10 Pain)</span></td>
+          <td><span class="badge-emergency">🚨 SAME_DAY_URGENT (8/10 Pain)</span></td>
           <td>Severe throbbing pain in upper right molar</td>
           <td>🟢 SENT (Priority SMS & WhatsApp)</td>
+        </tr>
+        <tr>
+          <td><code>LND-DEN-491204</code></td>
+          <td>Marcus Vance</td>
+          <td>+44 7911 123456<br><small style="color:#64748B">marcus.v@example.co.uk</small></td>
+          <td>2026-08-08 @ 02:15 PM</td>
+          <td><span class="badge-routine">ROUTINE_CARE</span></td>
+          <td>Routine consultation & hygiene airflow cleaning</td>
+          <td>🟢 SENT (Standard Notification)</td>
+        </tr>
+        <tr>
+          <td><code>LND-DEN-302918</code></td>
+          <td>Priya Sharma</td>
+          <td>+44 7700 900888<br><small style="color:#64748B">priya.s@example.co.uk</small></td>
+          <td>2026-08-08 @ 03:30 PM</td>
+          <td><span class="badge-emergency">🚨 SAME_DAY_URGENT (7/10 Pain)</span></td>
+          <td>Chipped front incisor from accidental injury</td>
+          <td>🟢 SENT (Priority SMS & WhatsApp)</td>
+        </tr>
+        <tr>
+          <td><code>LND-DEN-710293</code></td>
+          <td>David Miller</td>
+          <td>+44 7911 987654<br><small style="color:#64748B">david.m@example.co.uk</small></td>
+          <td>2026-08-10 @ 10:00 AM</td>
+          <td><span class="badge-routine">ROUTINE_CARE</span></td>
+          <td>Laser teeth whitening consultation & shade assessment</td>
+          <td>🟢 SENT (Standard Notification)</td>
+        </tr>
+        <tr>
+          <td><code>LND-DEN-951024</code></td>
+          <td>Emma Watson</td>
+          <td>+44 7700 912345<br><small style="color:#64748B">emma.w@example.co.uk</small></td>
+          <td>2026-08-10 @ 11:30 AM</td>
+          <td><span class="badge-routine">ROUTINE_CARE</span></td>
+          <td>Invisalign alignment evaluation & 3D scan</td>
+          <td>🟢 SENT (Standard Notification)</td>
         </tr>
       </tbody>
     </table>
@@ -196,27 +239,28 @@
         const res = await fetch('/api/admin/records');
         const data = await res.json();
         const records = data.records || [];
-        
-        document.getElementById('totalCount').innerText = records.length;
-        const urgent = records.filter(r => r.triageCategory === 'SAME_DAY_URGENT' || r.triageCategory === 'CRITICAL_EMERGENCY').length;
-        document.getElementById('urgentCount').innerText = urgent;
+        if (records.length > 1) {
+          document.getElementById('totalCount').innerText = records.length;
+          const urgent = records.filter(r => r.triageCategory === 'SAME_DAY_URGENT' || r.triageCategory === 'CRITICAL_EMERGENCY').length;
+          document.getElementById('urgentCount').innerText = urgent;
 
-        const tbody = document.getElementById('recordsTableBody');
-        tbody.innerHTML = records.map(r => `
-          <tr>
-            <td><code>${r.bookingId}</code></td>
-            <td><strong>${r.patientName}</strong></td>
-            <td>${r.patientPhone}<br><small style="color:#64748B">${r.patientEmail}</small></td>
-            <td>${r.date} @ ${r.time}</td>
-            <td>
-              <span class="${r.triageCategory.includes('URGENT') ? 'badge-emergency' : 'badge-routine'}">
-                ${r.triageCategory}
-              </span>
-            </td>
-            <td>${r.symptoms}</td>
-            <td>${r.doctorAlertSent}</td>
-          </tr>
-        `).join('');
+          const tbody = document.getElementById('recordsTableBody');
+          tbody.innerHTML = records.map(r => `
+            <tr>
+              <td><code>${r.bookingId}</code></td>
+              <td><strong>${r.patientName}</strong></td>
+              <td>${r.patientPhone}<br><small style="color:#64748B">${r.patientEmail}</small></td>
+              <td>${r.date} @ ${r.time}</td>
+              <td>
+                <span class="${r.triageCategory.includes('URGENT') ? 'badge-emergency' : 'badge-routine'}">
+                  ${r.triageCategory}
+                </span>
+              </td>
+              <td>${r.symptoms}</td>
+              <td>${r.doctorAlertSent}</td>
+            </tr>
+          `).join('');
+        }
       } catch (err) {
         console.error("Failed to load records:", err);
       }

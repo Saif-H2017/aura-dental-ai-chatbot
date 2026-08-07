@@ -39,8 +39,9 @@ class GeminiService {
   _initGeminiModel() {
     try {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
+      // Use gemini-1.5-flash-latest or gemini-2.0-flash
       this.model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-1.5-flash-latest',
         systemInstruction: SYSTEM_PROMPT
       });
       console.log("✅ Gemini AI Engine initialized successfully with live key.");
@@ -50,14 +51,9 @@ class GeminiService {
     }
   }
 
-  /**
-   * Process patient chat message and return structured response & triage state.
-   */
   async processMessage(chatHistory, userMessage, currentBookingDraft = {}) {
-    // Perform safety triage check
     const triage = evaluateTriage(userMessage, currentBookingDraft.painScore);
 
-    // Critical Emergency Trigger
     if (triage.code === "CRITICAL_EMERGENCY") {
       return {
         reply: `🚨 **CRITICAL SAFETY NOTICE**: Based on the symptoms described (${triage.matchedTrigger}), this may be a severe medical emergency. Please call **999** or go directly to your nearest NHS A&E hospital immediately.\n\nDr. Wright's clinic cannot safely delay acute airway or systemic emergencies. Stay safe!`,
@@ -72,7 +68,6 @@ class GeminiService {
     }
 
     try {
-      // Build conversation context from previous turns
       const contextTurns = (chatHistory || []).slice(-6).map(h => `${h.role === 'user' ? 'Patient' : 'Harley'}: ${h.content}`).join('\n');
       const prompt = `Previous Context:\n${contextTurns}\n\nCurrent Triage: ${triage.title}\nPatient message: "${userMessage}"`;
       
@@ -95,7 +90,6 @@ class GeminiService {
     const msg = userMessage.toLowerCase().trim();
     const turnsCount = (chatHistory || []).length;
 
-    // 1. Pain / Emergency Triage
     if (triage.code === "SAME_DAY_URGENT" || msg.includes("pain") || msg.includes("emergency") || msg.includes("broken") || msg.includes("bleeding") || msg.includes("swelling") || msg.includes("ache") || msg.includes("hurt")) {
       return {
         reply: `I completely understand you're dealing with discomfort (${triage.title}). Dr. Alexander Wright prioritizes urgent dental pain.\n\nI have flagged your request for a **Same-Day Emergency Slot**. \n\nPlease select a time or fill out your contact details so we can alert Dr. Wright's mobile right away.`,
@@ -104,7 +98,6 @@ class GeminiService {
       };
     }
 
-    // 2. Greetings (Varied based on conversation history depth)
     if (msg === "hi" || msg === "hello" || msg === "hey" || msg.startsWith("good morning") || msg.startsWith("good afternoon")) {
       if (turnsCount > 2) {
         return {
@@ -118,7 +111,6 @@ class GeminiService {
       };
     }
 
-    // 3. Location / Address / Opening Hours
     if (msg.includes("where") || msg.includes("address") || msg.includes("location") || msg.includes("hours") || msg.includes("open") || msg.includes("find")) {
       return {
         reply: `📍 **Aura Dental Studio** is located at **72 Harley Street, Marylebone, London W1G 7HG** (near Regent's Park and Oxford Circus tube stations).\n\n⏰ **Clinic Opening Hours**:\n- Monday to Friday: 08:30 AM – 06:00 PM\n- Saturday: 09:00 AM – 04:00 PM (Emergency slots only)\n- Sunday: Closed (Emergency triage line active)\n\nWould you like to book a visit with Dr. Wright?`,
@@ -126,7 +118,6 @@ class GeminiService {
       };
     }
 
-    // 4. Prices & Fees
     if (msg.includes("cost") || msg.includes("price") || msg.includes("fee") || msg.includes("how much") || msg.includes("pay")) {
       return {
         reply: `💳 **Aura Dental Fee Guide**:\n- Comprehensive Dental Consultation: £95\n- Emergency Triage & Pain Control Assessment: £120 (includes intra-oral X-rays)\n- Hygiene & Airflow Cleaning: £85\n\nWould you like me to reserve a consultation slot for you?`,
@@ -134,7 +125,6 @@ class GeminiService {
       };
     }
 
-    // 5. Doctor Info
     if (msg.includes("doctor") || msg.includes("dentist") || msg.includes("wright") || msg.includes("who")) {
       return {
         reply: `👨‍⚕️ **Dr. Alexander Wright, BDS** is our Principal Dental Surgeon. He brings over 15 years of experience in restorative, cosmetic, and emergency dentistry in Central London.\n\nWould you like to check Dr. Wright's upcoming schedule?`,
@@ -142,7 +132,6 @@ class GeminiService {
       };
     }
 
-    // 6. Booking Requests
     if (msg.includes("book") || msg.includes("appointment") || msg.includes("slot") || msg.includes("schedule") || msg.includes("cleaning") || msg.includes("checkup") || msg.includes("whitening") || msg.includes("tomorrow") || msg.includes("monday")) {
       return {
         reply: `I'd be happy to schedule your appointment with Dr. Wright at Aura Dental!\n\nHere are our next available calendar slots:\n1. **Today at 03:30 PM**\n2. **Tomorrow at 10:00 AM**\n3. **Tomorrow at 02:15 PM**\n\nWhich slot suits you best?`,
@@ -151,7 +140,6 @@ class GeminiService {
       };
     }
 
-    // 7. Dynamic Non-Repetitive Fallback
     const fallbackVariations = [
       `Thank you for asking about "${userMessage}". At Aura Dental Studio, we specialize in gentle, pain-free dental care. Would you like me to schedule a consultation with Dr. Wright or check our available appointment slots?`,
       `Regarding "${userMessage}", our Marylebone team is here to help! I can check Dr. Wright's schedule or answer any questions about our treatments.`,

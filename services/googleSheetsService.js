@@ -1,15 +1,67 @@
 const DEMO_PATIENT_RECORDS = [
   {
-    timestamp: new Date().toISOString(),
+    timestamp: "2026-08-07T14:20:00Z",
     bookingId: "LND-DEN-882103",
     patientName: "Sarah Jenkins",
-    patientPhone: "+447700900123",
+    patientPhone: "+44 7700 900123",
     patientEmail: "sarah.j@example.co.uk",
     triageCategory: "SAME_DAY_URGENT",
-    symptoms: "Severe throbbing pain in upper right molar, score 8/10",
+    symptoms: "Severe throbbing pain in upper right molar (Score 8/10)",
     date: "2026-08-08",
     time: "11:00 AM",
-    doctorAlertSent: "YES (SMS & WhatsApp)",
+    doctorAlertSent: "YES (Priority SMS & WhatsApp)",
+    status: "CONFIRMED"
+  },
+  {
+    timestamp: "2026-08-07T15:05:12Z",
+    bookingId: "LND-DEN-491204",
+    patientName: "Marcus Vance",
+    patientPhone: "+44 7911 123456",
+    patientEmail: "marcus.v@example.co.uk",
+    triageCategory: "ROUTINE_CARE",
+    symptoms: "Routine consultation & hygiene airflow cleaning",
+    date: "2026-08-08",
+    time: "02:15 PM",
+    doctorAlertSent: "YES (Standard Notification)",
+    status: "CONFIRMED"
+  },
+  {
+    timestamp: "2026-08-07T16:11:45Z",
+    bookingId: "LND-DEN-302918",
+    patientName: "Priya Sharma",
+    patientPhone: "+44 7700 900888",
+    patientEmail: "priya.s@example.co.uk",
+    triageCategory: "SAME_DAY_URGENT",
+    symptoms: "Chipped front incisor from accidental injury (Score 7/10)",
+    date: "2026-08-08",
+    time: "03:30 PM",
+    doctorAlertSent: "YES (Priority SMS & WhatsApp)",
+    status: "CONFIRMED"
+  },
+  {
+    timestamp: "2026-08-07T17:40:02Z",
+    bookingId: "LND-DEN-710293",
+    patientName: "David Miller",
+    patientPhone: "+44 7911 987654",
+    patientEmail: "david.m@example.co.uk",
+    triageCategory: "ROUTINE_CARE",
+    symptoms: "Laser teeth whitening consultation & shade assessment",
+    date: "2026-08-10",
+    time: "10:00 AM",
+    doctorAlertSent: "YES (Standard Notification)",
+    status: "CONFIRMED"
+  },
+  {
+    timestamp: "2026-08-07T18:02:30Z",
+    bookingId: "LND-DEN-951024",
+    patientName: "Emma Watson",
+    patientPhone: "+44 7700 912345",
+    patientEmail: "emma.w@example.co.uk",
+    triageCategory: "ROUTINE_CARE",
+    symptoms: "Invisalign alignment evaluation & 3D scan",
+    date: "2026-08-10",
+    time: "11:30 AM",
+    doctorAlertSent: "YES (Standard Notification)",
     status: "CONFIRMED"
   }
 ];
@@ -35,7 +87,7 @@ class GoogleSheetsService {
         this.isProduction = false;
       }
     } else {
-      console.log("ℹ️ Google Sheets running in Demo / Simulation Mode.");
+      console.log("ℹ️ Google Sheets running in Pre-populated Demo Database Mode.");
     }
   }
 
