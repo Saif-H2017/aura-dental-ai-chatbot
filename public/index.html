@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon.ico?v=2">
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
   <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=2">
-  <link rel="stylesheet" href="css/styles.css?v=8">
+  <link rel="stylesheet" href="css/styles.css?v=9">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,7 +27,7 @@
     <div class="nav-links">
       <a href="#services" class="nav-link">Services</a>
       <a href="#showcase" class="nav-link">Results</a>
-      <a href="#about" class="nav-link">About Us</a>
+      <a href="#reviews" class="nav-link">Reviews (48)</a>
       <div class="contact-phone">
         📞 +44 20 7946 0912
       </div>
@@ -49,7 +49,7 @@
     <!-- LEFT COLUMN -->
     <div class="hero-left">
       <div class="trust-badge">
-        <span class="stars">★★★★★</span> 4.9/5 from 400+ verified patient reviews
+        <span class="stars">★★★★★</span> 4.6/5 from 48 verified patient reviews
       </div>
       <h1 class="hero-headline">Gentle, Modern Dental Care Designed Around Your Comfort.</h1>
       <p class="hero-subheadline">
@@ -170,7 +170,37 @@
     </div>
   </section>
 
-  <!-- 5. FLOATING AI ASSISTANT WIDGET (BOTTOM RIGHT) -->
+  <!-- 5. 48 REALISTIC PATIENT REVIEWS & RATINGS SECTION -->
+  <section class="section-container" id="reviews">
+    <div class="section-header">
+      <div class="section-tag">Verified Feedback</div>
+      <h2 class="section-title">48 Real Patient Reviews</h2>
+      <p class="section-subtitle">
+        Average Rating: <strong style="color: #F59E0B;">⭐ 4.6 / 5.0</strong> based on 48 verified London patient experiences.
+        <span id="reviewCountBadge" style="display:block; font-size:0.85rem; color:var(--accent-sage); margin-top:4px; font-weight:700;">Showing 6 of 48 Reviews</span>
+      </p>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="reviews-filter-bar">
+      <button class="filter-btn active" onclick="filterReviews('all', this)">All Reviews (48)</button>
+      <button class="filter-btn" onclick="filterReviews('5.0', this)">5.0 ⭐ (22)</button>
+      <button class="filter-btn" onclick="filterReviews('4.5', this)">4.5 ⭐ (13)</button>
+      <button class="filter-btn" onclick="filterReviews('4.0', this)">4.0 ⭐ (8)</button>
+      <button class="filter-btn" onclick="filterReviews('3.5', this)">3.5 ⭐ (5)</button>
+    </div>
+
+    <!-- REVIEWS GRID -->
+    <div class="reviews-grid" id="reviewsGrid">
+      <!-- Dynamically populated from reviewsData.js -->
+    </div>
+
+    <div style="text-align: center; margin-top: 2.5rem;">
+      <button class="btn-secondary-outline" id="btnLoadMoreReviews" onclick="loadMoreReviews()">Load More Reviews (+6)</button>
+    </div>
+  </section>
+
+  <!-- 6. FLOATING AI ASSISTANT WIDGET (BOTTOM RIGHT) -->
 
   <!-- COLLAPSED FLOATING PILL BUTTON -->
   <button class="ai-widget-collapsed" id="aiCollapsedBtn" onclick="toggleAIDrawer()">
@@ -276,6 +306,7 @@
     </div>
   </footer>
 
-  <script src="js/app.js?v=8"></script>
+  <script src="js/reviewsData.js?v=1"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>

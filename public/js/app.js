@@ -29,6 +29,73 @@ async function loadLiveRealWorldSlots() {
   }
 }
 
+// 48 PATIENT REVIEWS & FILTERING ENGINE
+let currentReviewFilter = 'all';
+let currentReviewLimit = 6;
+
+function renderReviews() {
+  const container = document.getElementById('reviewsGrid');
+  const countBadge = document.getElementById('reviewCountBadge');
+  const loadMoreBtn = document.getElementById('btnLoadMoreReviews');
+  
+  if (!container || typeof REVIEWS_DATA === 'undefined') return;
+
+  let filtered = REVIEWS_DATA;
+  if (currentReviewFilter === '5.0') filtered = REVIEWS_DATA.filter(r => r.rating === 5.0);
+  else if (currentReviewFilter === '4.5') filtered = REVIEWS_DATA.filter(r => r.rating === 4.5);
+  else if (currentReviewFilter === '4.0') filtered = REVIEWS_DATA.filter(r => r.rating === 4.0);
+  else if (currentReviewFilter === '3.5') filtered = REVIEWS_DATA.filter(r => r.rating === 3.5);
+
+  if (countBadge) countBadge.innerText = `Showing ${Math.min(currentReviewLimit, filtered.length)} of ${filtered.length} Reviews`;
+
+  const visible = filtered.slice(0, currentReviewLimit);
+
+  container.innerHTML = visible.map(r => {
+    let starsHtml = '★★★★★';
+    if (r.rating === 4.5) starsHtml = '★★★★½';
+    else if (r.rating === 4.0) starsHtml = '★★★★☆';
+    else if (r.rating === 3.5) starsHtml = '★★★½☆';
+
+    return `
+      <div class="review-card">
+        <div class="review-card-header">
+          <div class="review-stars">${starsHtml} <span class="review-rating-num">(${r.rating.toFixed(1)})</span></div>
+          <span class="review-badge">${r.category}</span>
+        </div>
+        <p class="review-text">"${r.comment}"</p>
+        <div class="review-author-meta">
+          <strong>${r.name}</strong> • ${r.location}
+          <span class="review-date">${r.date}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (loadMoreBtn) {
+    if (currentReviewLimit >= filtered.length) {
+      loadMoreBtn.style.display = 'none';
+    } else {
+      loadMoreBtn.style.display = 'inline-block';
+      loadMoreBtn.innerText = `Load More Reviews (+6 remaining)`;
+    }
+  }
+}
+
+function filterReviews(filterVal, btnEl) {
+  currentReviewFilter = filterVal;
+  currentReviewLimit = 6;
+  
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  renderReviews();
+}
+
+function loadMoreReviews() {
+  currentReviewLimit += 6;
+  renderReviews();
+}
+
 // Haptic entrance pulse trigger after 5 seconds
 setTimeout(() => {
   const widgetBtn = document.getElementById('aiCollapsedBtn');
@@ -38,7 +105,10 @@ setTimeout(() => {
   }
 }, 5000);
 
-document.addEventListener('DOMContentLoaded', loadLiveRealWorldSlots);
+document.addEventListener('DOMContentLoaded', () => {
+  loadLiveRealWorldSlots();
+  renderReviews();
+});
 
 // Web Audio API Synthesized Chimes
 function playAudioChime(type = 'response') {
