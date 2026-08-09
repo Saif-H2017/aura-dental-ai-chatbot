@@ -236,7 +236,14 @@ function appendDrawerBubble(text, type) {
   const body = document.getElementById('drawerChatBody');
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${type}`;
-  bubble.innerHTML = text.replace(/\n/g, '<br>');
+  
+  // Format HTML & Markdown bolding
+  let formatted = text
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[📅 Add to Google Calendar\]\((.*?)\)/g, '<a href="$1" target="_blank" class="btn-gcal-link" style="display:inline-block; margin-top:8px; padding:6px 12px; background:#4285F4; color:#FFF; font-weight:700; border-radius:6px; text-decoration:none;">📅 Add to Google Calendar</a>');
+
+  bubble.innerHTML = formatted;
   body.appendChild(bubble);
   body.scrollTop = body.scrollHeight;
 }
@@ -290,12 +297,14 @@ async function submitFinalBooking(e) {
 
     if (data.success) {
       playAudioChime('response');
+      const gcalBtn = data.gcalUrl ? `[📅 Add to Google Calendar](${data.gcalUrl})\n` : '';
       const confirmHtml = `
 🎉 **APPOINTMENT CONFIRMED AT AURA DENTAL!**\n
 - **Ref ID**: \`${data.bookingId}\`
 - **Patient**: ${name}
 - **Slot**: ${data.date} at ${data.time}
 - **Clinic**: 72 Harley Street, London W1G 7HG\n
+${gcalBtn}
 Dr. Alexander Wright and the Aura Dental team look forward to seeing you!
       `;
       appendDrawerBubble(confirmHtml, 'bot');

@@ -58,6 +58,28 @@ app.post('/api/admin/login', (req, res) => {
   return res.status(401).json({ success: false, error: "Invalid surgeon email or password." });
 });
 
+// API: Save Google Calendar Credentials
+app.post('/api/admin/calendar-config', (req, res) => {
+  const { calendarId, serviceAccountEmail, privateKey } = req.body;
+  
+  googleCalendarService.setCalendarConfig({
+    calendarId: calendarId || 'primary',
+    serviceAccountEmail,
+    privateKey
+  });
+
+  if (calendarId) process.env.GOOGLE_CALENDAR_ID = calendarId;
+  if (serviceAccountEmail) process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = serviceAccountEmail;
+  if (privateKey) process.env.GOOGLE_PRIVATE_KEY = privateKey;
+
+  console.log("📅 Google Calendar Integration Configured!");
+  return res.json({
+    success: true,
+    message: "Google Calendar connected successfully!",
+    calendarId: calendarId || 'primary'
+  });
+});
+
 // API: Process Chat Message
 app.post('/api/chat', async (req, res) => {
   try {
@@ -128,6 +150,7 @@ app.post('/api/appointments/book', async (req, res) => {
       triageLevel,
       notifications: notificationResult.logs,
       sheetsLogged: sheetsResult.success,
+      gcalUrl: calendarResult.gcalUrl,
       mode: calendarResult.mode
     });
 

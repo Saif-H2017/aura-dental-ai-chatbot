@@ -1,14 +1,14 @@
-<!-- VERSION 4.1 FAILSAFE PASSWORD LOCKED ADMIN PORTAL -->
+<!-- VERSION 5.0 GOOGLE CALENDAR & RESEND READY -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dr. Wright's Surgeon Portal | Security Login</title>
-  <link rel="shortcut icon" href="favicon.ico?v=3">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
-  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=3">
-  <link rel="stylesheet" href="css/styles.css?v=4">
+  <link rel="shortcut icon" href="favicon.ico?v=4">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
+  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=4">
+  <link rel="stylesheet" href="css/styles.css?v=5">
   
   <script>
     // IMMEDIATE FAILSAFE AUTHENTICATION GUARD IN HEAD BEFORE DOM PARSING
@@ -215,7 +215,22 @@
 
     <div class="admin-container">
 
-      <!-- 1. RESEND DUAL EMAIL API CONNECTOR CARD -->
+      <!-- 1. GOOGLE CALENDAR CONNECTOR CARD -->
+      <div class="config-card" style="border-left: 4px solid #4285F4; background: #EFF6FF;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
+          📅 Connect Google Calendar Sync
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Enter your Doctor Google Calendar email address to automatically generate live calendar events & sync patient appointments!
+        </p>
+        <div style="display: flex; gap: 0.75rem; max-width: 750px; flex-wrap: wrap;">
+          <input type="email" id="gcalEmailInput" placeholder="saif.247ozx@gmail.com" value="saif.247ozx@gmail.com" style="flex:1; min-width: 250px; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+          <button class="btn-primary" style="background: #4285F4;" onclick="saveGCalConfig()">📅 Connect Google Calendar</button>
+        </div>
+        <div id="gcalStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+      </div>
+
+      <!-- 2. RESEND DUAL EMAIL API CONNECTOR CARD -->
       <div class="config-card" style="border-left: 4px solid var(--routine-green); background: #F0FDF4;">
         <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
           ⚡ Resend Dual Email Service (Patient Confirmation + Doctor Alert)
@@ -230,7 +245,7 @@
         <div id="resendStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
       </div>
 
-      <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
+      <!-- 3. GEMINI LIVE API KEY SETUP CARD -->
       <div class="config-card">
         <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
           🔑 Connect Live Gemini AI Engine
@@ -261,7 +276,7 @@
         </div>
         <div class="stat-card">
           <div style="font-size: 0.8rem; color: var(--text-muted);">Google Calendar Sync</div>
-          <div class="stat-val" style="color: var(--routine-green); font-size: 1.2rem; margin-top: 0.8rem;">🟢 Connected</div>
+          <div class="stat-val" style="color: #4285F4; font-size: 1.2rem; margin-top: 0.8rem;">🟢 Connected</div>
         </div>
       </div>
 
@@ -490,6 +505,36 @@
         }
       } catch (e) {
         console.error("Failed to clear history:", e);
+      }
+    }
+
+    async function saveGCalConfig() {
+      const calendarId = document.getElementById('gcalEmailInput').value.trim();
+      const statusDiv = document.getElementById('gcalStatus');
+
+      if (!calendarId) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '⚠️ Please enter a Google Calendar email address.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/calendar-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ calendarId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusDiv.style.color = '#4285F4';
+          statusDiv.innerText = `✅ Connected to Google Calendar (${calendarId})! 1-Click Calendar Add & Email Invites active.`;
+        } else {
+          statusDiv.style.color = 'var(--emergency-red)';
+          statusDiv.innerText = '❌ Error connecting Google Calendar: ' + data.error;
+        }
+      } catch (e) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '❌ Connection Error: ' + e.message;
       }
     }
 
