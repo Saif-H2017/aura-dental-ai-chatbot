@@ -1,74 +1,81 @@
-// DYNAMIC REAL-WORLD CLOCK & SLOT GENERATOR (Synced to PKT - Asia/Karachi)
+// DYNAMIC REAL-TIME CLOCK & SLOT ENGINE (Explicit PKT UTC+5 Offset)
 
 function getLiveRealWorldSlots() {
-  // Get current date & time in Pakistan Time (Asia/Karachi / UTC+5)
   const now = new Date();
   
-  // Format dates in PKT
-  const optionsDate = { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' };
-  const formatterDate = new Intl.DateTimeFormat('en-CA', optionsDate); // YYYY-MM-DD
-  const todayIso = formatterDate.format(now); // e.g. "2026-08-09"
+  // Force Pakistan Time (UTC + 5 Hours)
+  const pktMs = now.getTime() + (5 * 60 * 60 * 1000);
+  const pktNow = new Date(pktMs);
 
-  // Calculate Tomorrow (+1 day)
-  const tomorrowObj = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const tomorrowIso = formatterDate.format(tomorrowObj); // e.g. "2026-08-10"
+  // Helper to extract YYYY-MM-DD in PKT
+  const formatIsoDate = (d) => {
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
 
-  // Calculate Day After Tomorrow (+2 days)
-  const dayAfterObj = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-  const dayAfterIso = formatterDate.format(dayAfterObj); // e.g. "2026-08-11"
+  // Helper for readable day label (e.g. "Sun, Aug 9")
+  const formatReadableDay = (d) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  };
 
-  // Calculate Day 3 (+3 days)
-  const day3Obj = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const day3Iso = formatterDate.format(day3Obj);
+  const todayIso = formatIsoDate(pktNow);
+  const todayLabel = formatReadableDay(pktNow);
 
-  // Format readable days
-  const optionsDay = { timeZone: 'Asia/Karachi', weekday: 'short', month: 'short', day: 'numeric' };
-  const formatDay = (d) => new Intl.DateTimeFormat('en-GB', optionsDay).format(d);
+  const tomorrowObj = new Date(pktMs + (24 * 60 * 60 * 1000));
+  const tomorrowIso = formatIsoDate(tomorrowObj);
+  const tomorrowLabel = formatReadableDay(tomorrowObj);
 
-  const todayStr = formatDay(now);
-  const tomorrowStr = formatDay(tomorrowObj);
-  const dayAfterStr = formatDay(dayAfterObj);
-  const day3Str = formatDay(day3Obj);
+  const dayAfterObj = new Date(pktMs + (2 * 24 * 60 * 60 * 1000));
+  const dayAfterIso = formatIsoDate(dayAfterObj);
+  const dayAfterLabel = formatReadableDay(dayAfterObj);
+
+  const day3Obj = new Date(pktMs + (3 * 24 * 60 * 60 * 1000));
+  const day3Iso = formatIsoDate(day3Obj);
+  const day3Label = formatReadableDay(day3Obj);
 
   return [
     {
-      id: `slot-real-1`,
+      id: `slot-pkt-1`,
       date: todayIso,
       time: "07:30 PM",
-      display: `Today (${todayStr}) at 7:30 PM PKT`,
-      shortLabel: `Today at 7:30 PM`,
+      display: `Today (${todayLabel}) at 7:30 PM PKT`,
+      shortLabel: `Today (${todayLabel}) at 7:30 PM`,
       urgentOnly: false
     },
     {
-      id: `slot-real-2`,
+      id: `slot-pkt-2`,
       date: tomorrowIso,
       time: "10:00 AM",
-      display: `Tomorrow (${tomorrowStr}) at 10:00 AM PKT`,
-      shortLabel: `Tomorrow at 10:00 AM`,
+      display: `Tomorrow (${tomorrowLabel}) at 10:00 AM PKT`,
+      shortLabel: `Tomorrow (${tomorrowLabel}) at 10:00 AM`,
       urgentOnly: false
     },
     {
-      id: `slot-real-3`,
+      id: `slot-pkt-3`,
       date: tomorrowIso,
       time: "02:15 PM",
-      display: `Tomorrow (${tomorrowStr}) at 2:15 PM PKT`,
-      shortLabel: `Tomorrow at 2:15 PM`,
+      display: `Tomorrow (${tomorrowLabel}) at 2:15 PM PKT`,
+      shortLabel: `Tomorrow (${tomorrowLabel}) at 2:15 PM`,
       urgentOnly: false
     },
     {
-      id: `slot-real-4`,
+      id: `slot-pkt-4`,
       date: dayAfterIso,
       time: "11:30 AM",
-      display: `${dayAfterStr} at 11:30 AM PKT`,
-      shortLabel: `${dayAfterStr} at 11:30 AM`,
+      display: `${dayAfterLabel} at 11:30 AM PKT`,
+      shortLabel: `${dayAfterLabel} at 11:30 AM`,
       urgentOnly: false
     },
     {
-      id: `slot-real-5`,
+      id: `slot-pkt-5`,
       date: day3Iso,
       time: "03:30 PM",
-      display: `${day3Str} at 3:30 PM PKT`,
-      shortLabel: `${day3Str} at 3:30 PM`,
+      display: `${day3Label} at 3:30 PM PKT`,
+      shortLabel: `${day3Label} at 3:30 PM`,
       urgentOnly: false
     }
   ];

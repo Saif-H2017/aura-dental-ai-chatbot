@@ -93,12 +93,13 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// API: Get Slots
+// API: Get Slots with No-Cache Headers & Live Real-Time PKT Sync
 app.get('/api/slots', async (req, res) => {
   try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const isUrgent = req.query.urgent === 'true';
     const slots = await googleCalendarService.getAvailableSlots(isUrgent);
-    res.json({ slots });
+    res.json({ slots, serverPktTime: new Date(Date.now() + 5 * 3600 * 1000).toISOString() });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch slots" });
   }
