@@ -1,17 +1,17 @@
-const twilio = require('twilio');
+const https = require('https');
+const url = require('url');
 
 class NotificationService {
   constructor() {
     this.isTwilioConfigured = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
     this.isEmailConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+    this.formspreeUrl = process.env.FORMSPREE_URL || null;
 
     if (this.isTwilioConfigured) {
       try {
         const twilioLib = require('twilio');
         this.twilioClient = twilioLib(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        console.log("✅ Twilio SMS & WhatsApp Service initialized.");
       } catch (e) {
-        console.error("⚠️ Twilio config error:", e.message);
         this.isTwilioConfigured = false;
       }
     }
@@ -19,6 +19,11 @@ class NotificationService {
     if (this.isEmailConfigured) {
       this._initTransporter();
     }
+  }
+
+  setFormspreeUrl(endpoint) {
+    this.formspreeUrl = endpoint;
+    process.env.FORMSPREE_URL = endpoint;
   }
 
   setEmailConfig(user, pass) {
@@ -38,9 +43,7 @@ class NotificationService {
           pass: process.env.SMTP_PASS
         }
       });
-      console.log(`✅ Nodemailer initialized for Doctor Email: ${process.env.SMTP_USER}`);
     } catch (e) {
-      console.error("⚠️ Nodemailer init error:", e.message);
       this.isEmailConfigured = false;
     }
   }
@@ -58,7 +61,7 @@ class NotificationService {
 
     const logs = [];
 
-    // 1. DOCTOR MOBILE SMS / WHATSAPP ALERT VIA TWILIO
+    // 1. DOCTOR MOBILE SMS ALERT VIA TWILIO
     const doctorSmsMsg = isEmergency
       ? `🚨 URGENT EMERGENCY DENTAL APPOINTMENT!\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSymptoms: ${symptoms}\nTriage: ${triageLevel.title}\nSlot: ${date} at ${time}\nRef: ${bookingId}`
       : `📅 New Appointment Booked\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSlot: ${date} at ${time}\nType: ${triageLevel.title}\nRef: ${bookingId}`;
@@ -66,7 +69,7 @@ class NotificationService {
     let doctorSmsResult = await this._sendSms(doctorPhone, doctorSmsMsg);
     logs.push({ recipient: `Doctor SMS (${doctorPhone})`, type: "SMS", status: doctorSmsResult.status, detail: doctorSmsResult.detail });
 
-    // 2. EMAIL 1: FROM DOCTOR TO PATIENT (Confirmation)
+    // 2. EMAIL DISPATCH (FORMSPREE / WEBHOOK OR NODEMAILER OR DEMO MODE)
     const patientEmailSubject = `✨ Appointment Confirmation - ${clinicName} [Ref: ${bookingId}]`;
     const patientEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #FAF7F2; padding: 20px; border-radius: 16px;">
@@ -104,41 +107,83 @@ class NotificationService {
       </div>
     `;
 
-    let patientEmailRes = await this._sendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
-    logs.push({ recipient: `Patient (${patientEmail})`, type: "EMAIL TO PATIENT", status: patientEmailRes.status, detail: patientEmailRes.detail });
+    // Dispatch via Formspree Webhook if configured, else Nodemailer
+    if (this.formspreeUrl) {
+      const webhookRes = await this._sendFormspreeWebhook({
+        bookingId,
+        patientName,
+        patientPhone,
+        patientEmail,
+        doctorEmail,
+        date,
+        time,
+        symptoms,
+        triageLevel: triageLevel.title
+      });
+      logs.push({ recipient: `Patient & Doctor (Formspree)`, type: "FORMSPREE WEBHOOK", status: webhookRes.status, detail: webhookRes.detail });
+    } else {
+      let patientEmailRes = await this._sendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
+      logs.push({ recipient: `Patient (${patientEmail})`, type: "EMAIL TO PATIENT", status: patientEmailRes.status, detail: patientEmailRes.detail });
 
-    // 3. EMAIL 2: FROM AI RECEPTIONIST TO DOCTOR (Booking Alert)
-    const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
-    const doctorEmailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0F172A; padding: 20px; border-radius: 16px; color: white;">
-        <h2 style="color: ${isEmergency ? '#EF4444' : '#38BDF8'}; margin-top: 0;">
-          ${isEmergency ? '🚨 URGENT EMERGENCY DENTAL APPOINTMENT' : '📅 NEW PATIENT BOOKING'}
-        </h2>
-        <p style="color: #cbd5e1; font-size: 15px;">A patient has just booked an appointment via the 24/7 AI Receptionist.</p>
-        
-        <div style="background: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
-          <p style="margin: 6px 0;"><strong>👤 Patient Name:</strong> ${patientName}</p>
-          <p style="margin: 6px 0;"><strong>📞 Phone:</strong> <a href="tel:${patientPhone}" style="color: #38BDF8;">${patientPhone}</a></p>
-          <p style="margin: 6px 0;"><strong>✉️ Email:</strong> ${patientEmail}</p>
-          <p style="margin: 6px 0;"><strong>🗓️ Requested Slot:</strong> ${date} at ${time}</p>
-          <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageLevel.title}</p>
-          <p style="margin: 6px 0;"><strong>🩺 Symptoms / Notes:</strong> ${symptoms}</p>
-          <p style="margin: 6px 0;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
+      const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
+      const doctorEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0F172A; padding: 20px; border-radius: 16px; color: white;">
+          <h2 style="color: ${isEmergency ? '#EF4444' : '#38BDF8'}; margin-top: 0;">
+            ${isEmergency ? '🚨 URGENT EMERGENCY DENTAL APPOINTMENT' : '📅 NEW PATIENT BOOKING'}
+          </h2>
+          <p style="color: #cbd5e1; font-size: 15px;">A patient has just booked an appointment via the 24/7 AI Receptionist.</p>
+          
+          <div style="background: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
+            <p style="margin: 6px 0;"><strong>👤 Patient Name:</strong> ${patientName}</p>
+            <p style="margin: 6px 0;"><strong>📞 Phone:</strong> <a href="tel:${patientPhone}" style="color: #38BDF8;">${patientPhone}</a></p>
+            <p style="margin: 6px 0;"><strong>✉️ Email:</strong> ${patientEmail}</p>
+            <p style="margin: 6px 0;"><strong>🗓️ Requested Slot:</strong> ${date} at ${time}</p>
+            <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageLevel.title}</p>
+            <p style="margin: 6px 0;"><strong>🩺 Symptoms / Notes:</strong> ${symptoms}</p>
+            <p style="margin: 6px 0;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
+          </div>
         </div>
-
-        <p style="color: #94a3b8; font-size: 13px; margin-top: 15px;">
-          This record has been synchronized with your Google Calendar and Google Sheets database.
-        </p>
-      </div>
-    `;
-
-    let doctorEmailRes = await this._sendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
-    logs.push({ recipient: `Doctor (${doctorEmail})`, type: "EMAIL TO DOCTOR", status: doctorEmailRes.status, detail: doctorEmailRes.detail });
+      `;
+      let doctorEmailRes = await this._sendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
+      logs.push({ recipient: `Doctor (${doctorEmail})`, type: "EMAIL TO DOCTOR", status: doctorEmailRes.status, detail: doctorEmailRes.detail });
+    }
 
     return {
       success: true,
       logs
     };
+  }
+
+  async _sendFormspreeWebhook(payload) {
+    return new Promise((resolve) => {
+      const parsedUrl = url.parse(this.formspreeUrl);
+      const postData = JSON.stringify(payload);
+
+      const options = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.path,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ status: "SENT", detail: `Formspree webhook success (${res.statusCode})` });
+        } else {
+          resolve({ status: "FAILED", detail: `Formspree error HTTP ${res.statusCode}` });
+        }
+      });
+
+      req.on('error', (e) => {
+        resolve({ status: "FAILED", detail: e.message });
+      });
+
+      req.write(postData);
+      req.end();
+    });
   }
 
   async _sendSms(to, body) {
@@ -154,7 +199,6 @@ class NotificationService {
       });
       return { status: "DELIVERED", detail: `Twilio SID: ${message.sid}` };
     } catch (err) {
-      console.error(`Twilio SMS error to ${to}:`, err.message);
       return { status: "FAILED_FAILOVER_LOGGED", detail: err.message };
     }
   }
@@ -173,7 +217,6 @@ class NotificationService {
       });
       return { status: "SENT", detail: `Nodemailer SMTP success to ${to}` };
     } catch (err) {
-      console.error(`Email delivery error to ${to}:`, err.message);
       return { status: "FAILED", detail: err.message };
     }
   }

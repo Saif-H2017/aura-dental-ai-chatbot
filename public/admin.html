@@ -96,14 +96,29 @@
   </nav>
 
   <div class="admin-container">
-    
-    <!-- 1. DUAL EMAIL DISPATCH & LIVE DIAGNOSTIC TEST CARD -->
-    <div class="config-card" style="border-left: 4px solid var(--routine-green);">
+
+    <!-- 1. FORMSPREE ZERO-CONFIG EMAIL CONNECTOR CARD -->
+    <div class="config-card" style="border-left: 4px solid var(--accent-cyan); background: #F0F9FF;">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
-        ✉️ Dual Email Dispatcher & Live Connection Tester
+        ⚡ Formspree Direct Email Webhook (Zero Gmail Security / 0 Config Needed)
       </h3>
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Enter your Doctor Gmail and 16-character Gmail App Password (from <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>). The system will send confirmation emails <strong>FROM Doctor Email TO Patient Email</strong>, and send booking alert emails <strong>TO Doctor Email</strong>!
+        Create a free endpoint at <a href="https://formspree.io/" target="_blank" style="font-weight: bold; color: var(--accent-cyan);">formspree.io</a> (takes 10 seconds), paste your Formspree endpoint URL below (e.g. <code>https://formspree.io/f/xbjnqkyz</code>), and click Save!
+      </p>
+      <div style="display: flex; gap: 0.75rem; max-width: 750px;">
+        <input type="url" id="formspreeUrlInput" placeholder="Paste your Formspree Endpoint URL (https://formspree.io/f/...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <button class="btn-primary" style="background: var(--brand-navy);" onclick="saveFormspreeConfig()">Connect Formspree Email</button>
+      </div>
+      <div id="formspreeStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+    </div>
+    
+    <!-- 2. GMAIL SMTP DISPATCH & DIAGNOSTIC TEST CARD -->
+    <div class="config-card" style="border-left: 4px solid var(--routine-green);">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
+        ✉️ Gmail SMTP Dispatcher & Live Connection Tester
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Or enter your Doctor Gmail and 16-character Gmail App Password (from <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>).
       </p>
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: center;">
         <input type="email" id="docEmailInput" placeholder="Doctor Email (dr.wright@gmail.com)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.88rem;">
@@ -114,7 +129,7 @@
       <div id="emailConfigStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
     </div>
 
-    <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
+    <!-- 3. GEMINI LIVE API KEY SETUP CARD -->
     <div class="config-card">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
         🔑 Connect Live Gemini AI Engine
@@ -221,6 +236,36 @@
   </div>
 
   <script>
+    async function saveFormspreeConfig() {
+      const formspreeUrl = document.getElementById('formspreeUrlInput').value.trim();
+      const statusDiv = document.getElementById('formspreeStatus');
+
+      if (!formspreeUrl) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '⚠️ Please enter your Formspree endpoint URL.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/formspree-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ formspreeUrl })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusDiv.style.color = 'var(--routine-green)';
+          statusDiv.innerText = '✅ Formspree Email Webhook Connected! Patient booking notifications will now deliver automatically to your email!';
+        } else {
+          statusDiv.style.color = 'var(--emergency-red)';
+          statusDiv.innerText = '❌ Error saving Formspree URL: ' + data.error;
+        }
+      } catch (e) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '❌ Connection Error: ' + e.message;
+      }
+    }
+
     async function saveAndTestEmailConfig() {
       const doctorEmail = document.getElementById('docEmailInput').value.trim();
       const emailPassword = document.getElementById('docPassInput').value.trim();

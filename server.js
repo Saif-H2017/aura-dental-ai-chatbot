@@ -104,7 +104,18 @@ app.post('/api/appointments/book', async (req, res) => {
   }
 });
 
-// API: Save Gemini API Key runtime
+// API: Save Formspree Webhook Endpoint
+app.post('/api/admin/formspree-config', (req, res) => {
+  const { formspreeUrl } = req.body;
+  if (formspreeUrl) {
+    notificationService.setFormspreeUrl(formspreeUrl);
+    console.log("💌 Formspree Endpoint updated:", formspreeUrl);
+    return res.json({ success: true, message: "Formspree Email Webhook configured successfully!" });
+  }
+  res.status(400).json({ error: "Formspree endpoint URL is required." });
+});
+
+// API: Save Gemini API Key
 app.post('/api/admin/config', (req, res) => {
   const { apiKey } = req.body;
   if (apiKey) {
@@ -116,7 +127,7 @@ app.post('/api/admin/config', (req, res) => {
   res.status(400).json({ error: "API key is required." });
 });
 
-// API: Save Email SMTP credentials & Run Immediate Live Diagnostic Test
+// API: Save Email SMTP credentials
 app.post('/api/admin/email-config', async (req, res) => {
   const { doctorEmail, emailPassword, testPatientEmail } = req.body;
   if (!doctorEmail || !emailPassword) {
@@ -129,7 +140,6 @@ app.post('/api/admin/email-config', async (req, res) => {
 
   notificationService.setEmailConfig(doctorEmail, emailPassword);
 
-  // If a test patient email was provided, run an immediate live email delivery test
   if (testPatientEmail) {
     try {
       const testResult = await notificationService.sendAppointmentNotifications({
@@ -144,17 +154,15 @@ app.post('/api/admin/email-config', async (req, res) => {
         isEmergency: false
       });
 
-      const patientLog = testResult.logs.find(l => l.type === "EMAIL TO PATIENT");
-      const doctorLog = testResult.logs.find(l => l.type === "EMAIL TO DOCTOR");
-
-      if (patientLog.status === "SENT") {
+      const patientLog = testResult.logs.find(l => l.type.includes("EMAIL"));
+      if (patientLog && patientLog.status === "SENT") {
         return res.json({
           success: true,
           message: `✅ LIVE EMAIL SUCCESS! Test email delivered to ${testPatientEmail} and ${doctorEmail}.`
         });
       } else {
         return res.status(500).json({
-          error: `Email failed to send. SMTP error detail: ${patientLog.detail}`
+          error: `Email failed. Status: ${patientLog ? patientLog.detail : 'Unknown error'}`
         });
       }
     } catch (err) {
@@ -175,7 +183,7 @@ app.get('/api/admin/records', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: "online",
@@ -184,6 +192,7 @@ app.get('/api/health', (req, res) => {
     surgeon: process.env.SURGEON_NAME || "Dr. Alexander Wright, BDS",
     integrations: {
       gemini: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
+      formspree: Boolean(process.env.FORMSPREE_URL),
       emailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
       googleCalendarServiceAccount: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL),
       googleSheets: Boolean(process.env.GOOGLE_SPREADSHEET_ID),
