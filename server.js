@@ -16,29 +16,56 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Multi-environment robust public directory resolver (Handles both local & Vercel serverless /api/ lambda execution)
-const publicDir = fs.existsSync(path.join(__dirname, 'public'))
-  ? path.join(__dirname, 'public')
-  : path.join(__dirname, '..', 'public');
+// Multi-environment robust public directory resolver
+const getPublicDir = () => {
+  const candidates = [
+    path.join(process.cwd(), 'public'),
+    path.join(__dirname, 'public'),
+    path.join(__dirname, '..', 'public')
+  ];
 
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, 'index.html'))) {
+      return dir;
+    }
+  }
+  return path.join(process.cwd(), 'public');
+};
+
+const getIndexHtmlPath = () => {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'index.html'),
+    path.join(process.cwd(), 'index.html'),
+    path.join(__dirname, 'public', 'index.html'),
+    path.join(__dirname, '..', 'public', 'index.html')
+  ];
+
+  for (const file of candidates) {
+    if (fs.existsSync(file)) {
+      return file;
+    }
+  }
+  return candidates[0];
+};
+
+const publicDir = getPublicDir();
 app.use(express.static(publicDir));
 
-// Explicit route for root & index.html with no-cache headers to bust Vercel Edge CDN cache
-app.get('/', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
-    ? path.join(publicDir, 'index.html')
-    : path.join(process.cwd(), 'index.html');
-  res.sendFile(targetFile);
-});
+// Direct File Stream Sender with Cache-Busting Headers
+const serveFreshIndexHtml = (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  try {
+    const htmlPath = getIndexHtmlPath();
+    const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+    res.send(htmlContent);
+  } catch (e) {
+    res.sendFile(path.join(publicDir, 'index.html'));
+  }
+};
 
-app.get('/index.html', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
-    ? path.join(publicDir, 'index.html')
-    : path.join(process.cwd(), 'index.html');
-  res.sendFile(targetFile);
-});
+app.get('/', serveFreshIndexHtml);
+app.get('/index.html', serveFreshIndexHtml);
 
 // Explicit favicon route handlers
 app.get('/favicon.ico', (req, res) => {
@@ -254,14 +281,8 @@ app.post('/api/admin/callback', async (req, res) => {
   }
 });
 
-// Catch-all route to serve index.html with no-cache headers
-app.get('*', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
-    ? path.join(publicDir, 'index.html')
-    : path.join(process.cwd(), 'index.html');
-  res.sendFile(targetFile);
-});
+// Catch-all route to serve fresh index.html with no-cache headers
+app.get('*', serveFreshIndexHtml);
 
 // Start Server locally
 if (process.env.NODE_ENV !== 'production' && require.main === module) {
