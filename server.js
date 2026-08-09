@@ -18,6 +18,18 @@ app.use(express.json());
 const publicDir = path.join(process.cwd(), 'public');
 app.use(express.static(publicDir));
 
+// Explicit favicon route handlers
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(publicDir, 'favicon.ico'));
+});
+app.get('/favicon.svg', (req, res) => {
+  res.sendFile(path.join(publicDir, 'favicon.svg'));
+});
+app.get('/favicon.jpg', (req, res) => {
+  res.sendFile(path.join(publicDir, 'favicon.jpg'));
+});
+
+// Admin portal routes with no-cache headers
 app.get('/admin', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(publicDir, 'admin.html'));
