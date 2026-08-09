@@ -97,20 +97,21 @@
 
   <div class="admin-container">
     
-    <!-- 1. DUAL EMAIL CONFIGURATION CARD (DOCTOR & PATIENT DISPATCH) -->
+    <!-- 1. DUAL EMAIL DISPATCH & LIVE DIAGNOSTIC TEST CARD -->
     <div class="config-card" style="border-left: 4px solid var(--routine-green);">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
-        ✉️ Dual Email Dispatch Settings (Doctor ➔ Patient & AI ➔ Doctor Alert)
+        ✉️ Dual Email Dispatcher & Live Connection Tester
       </h3>
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Enter your Doctor Gmail address & App Password below. The system will send confirmation emails <strong>FROM this Doctor email TO your Patient email</strong>, and send alert emails <strong>TO your Doctor email</strong> whenever a booking happens!
+        Enter your Doctor Gmail and 16-character Gmail App Password (from <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>). The system will send confirmation emails <strong>FROM Doctor Email TO Patient Email</strong>, and send booking alert emails <strong>TO Doctor Email</strong>!
       </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem;">
-        <input type="email" id="docEmailInput" placeholder="Doctor Email (e.g. dr.wright@gmail.com)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
-        <input type="password" id="docPassInput" placeholder="Gmail App Password (16 chars)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
-        <button class="btn-primary" style="background: var(--routine-green);" onclick="saveEmailConfig()">Save & Connect Email</button>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: center;">
+        <input type="email" id="docEmailInput" placeholder="Doctor Email (dr.wright@gmail.com)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.88rem;">
+        <input type="password" id="docPassInput" placeholder="16-Char Gmail App Password" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.88rem;">
+        <input type="email" id="testPatientEmailInput" placeholder="Patient Test Email (patient@gmail.com)" style="padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.88rem;">
+        <button class="btn-primary" style="background: var(--routine-green); white-space: nowrap;" onclick="saveAndTestEmailConfig()">🚀 Send Live Test Email</button>
       </div>
-      <div id="emailConfigStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
+      <div id="emailConfigStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
     </div>
 
     <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
@@ -220,34 +221,38 @@
   </div>
 
   <script>
-    async function saveEmailConfig() {
+    async function saveAndTestEmailConfig() {
       const doctorEmail = document.getElementById('docEmailInput').value.trim();
       const emailPassword = document.getElementById('docPassInput').value.trim();
+      const testPatientEmail = document.getElementById('testPatientEmailInput').value.trim();
       const statusDiv = document.getElementById('emailConfigStatus');
 
       if (!doctorEmail || !emailPassword) {
         statusDiv.style.color = 'var(--emergency-red)';
-        statusDiv.innerText = 'Please enter both your Doctor Gmail address and 16-character App Password.';
+        statusDiv.innerText = '⚠️ Please enter both your Doctor Gmail address and 16-character App Password.';
         return;
       }
+
+      statusDiv.style.color = 'var(--brand-navy)';
+      statusDiv.innerText = '⏳ Testing live SMTP server connection & dispatching test emails...';
 
       try {
         const res = await fetch('/api/admin/email-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ doctorEmail, emailPassword })
+          body: JSON.stringify({ doctorEmail, emailPassword, testPatientEmail: testPatientEmail || doctorEmail })
         });
         const data = await res.json();
         if (data.success) {
           statusDiv.style.color = 'var(--routine-green)';
-          statusDiv.innerText = '✅ Live Email Dispatch connected for ' + doctorEmail + '!';
+          statusDiv.innerText = data.message;
         } else {
           statusDiv.style.color = 'var(--emergency-red)';
-          statusDiv.innerText = '⚠️ Error saving email config: ' + data.error;
+          statusDiv.innerText = '❌ Email Test Failed: ' + data.error;
         }
       } catch (e) {
         statusDiv.style.color = 'var(--emergency-red)';
-        statusDiv.innerText = '⚠️ Connection error while saving email settings.';
+        statusDiv.innerText = '❌ Connection Error: ' + e.message;
       }
     }
 

@@ -15,11 +15,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Universal static file resolver using process.cwd() for Vercel compatibility
 const publicDir = path.join(process.cwd(), 'public');
 app.use(express.static(publicDir));
 
-// Explicit route for Doctor Admin Portal
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
@@ -27,15 +25,11 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// API: Process Chat Message with Gemini & Triage Engine
+// API: Process Chat Message
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, chatHistory, bookingDraft } = req.body;
-
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
-    }
-
+    if (!message) return res.status(400).json({ error: "Message is required" });
     const result = await geminiService.processMessage(chatHistory || [], message, bookingDraft || {});
     res.json(result);
   } catch (error) {
@@ -44,14 +38,13 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// API: Get Available Calendar Slots
+// API: Get Slots
 app.get('/api/slots', async (req, res) => {
   try {
     const isUrgent = req.query.urgent === 'true';
     const slots = await googleCalendarService.getAvailableSlots(isUrgent);
     res.json({ slots });
   } catch (error) {
-    console.error("Error fetching slots:", error);
     res.status(500).json({ error: "Failed to fetch slots" });
   }
 });
@@ -123,23 +116,56 @@ app.post('/api/admin/config', (req, res) => {
   res.status(400).json({ error: "API key is required." });
 });
 
-// API: Save Email SMTP credentials runtime
-app.post('/api/admin/email-config', (req, res) => {
-  const { doctorEmail, emailPassword, surgeonPhone } = req.body;
-  if (doctorEmail && emailPassword) {
-    process.env.SMTP_USER = doctorEmail;
-    process.env.SMTP_PASS = emailPassword;
-    process.env.SURGEON_EMAIL = doctorEmail;
-    if (surgeonPhone) process.env.SURGEON_PHONE = surgeonPhone;
-    
-    notificationService.setEmailConfig(doctorEmail, emailPassword);
-    console.log(`📧 Doctor Email & SMTP configured for: ${doctorEmail}`);
-    return res.json({ success: true, message: `Live Email Dispatch configured for ${doctorEmail}` });
+// API: Save Email SMTP credentials & Run Immediate Live Diagnostic Test
+app.post('/api/admin/email-config', async (req, res) => {
+  const { doctorEmail, emailPassword, testPatientEmail } = req.body;
+  if (!doctorEmail || !emailPassword) {
+    return res.status(400).json({ error: "Doctor email and App password are required." });
   }
-  res.status(400).json({ error: "Doctor email and App password are required." });
+
+  process.env.SMTP_USER = doctorEmail;
+  process.env.SMTP_PASS = emailPassword;
+  process.env.SURGEON_EMAIL = doctorEmail;
+
+  notificationService.setEmailConfig(doctorEmail, emailPassword);
+
+  // If a test patient email was provided, run an immediate live email delivery test
+  if (testPatientEmail) {
+    try {
+      const testResult = await notificationService.sendAppointmentNotifications({
+        bookingId: "TEST-EMAIL-001",
+        patientName: "Diagnostic Test Patient",
+        patientPhone: "+447700900000",
+        patientEmail: testPatientEmail,
+        date: "2026-08-08",
+        time: "10:00 AM",
+        triageLevel: { code: "ROUTINE_CARE", title: "Routine Consultation Test" },
+        symptoms: "Live SMTP Connection Diagnostic Test",
+        isEmergency: false
+      });
+
+      const patientLog = testResult.logs.find(l => l.type === "EMAIL TO PATIENT");
+      const doctorLog = testResult.logs.find(l => l.type === "EMAIL TO DOCTOR");
+
+      if (patientLog.status === "SENT") {
+        return res.json({
+          success: true,
+          message: `✅ LIVE EMAIL SUCCESS! Test email delivered to ${testPatientEmail} and ${doctorEmail}.`
+        });
+      } else {
+        return res.status(500).json({
+          error: `Email failed to send. SMTP error detail: ${patientLog.detail}`
+        });
+      }
+    } catch (err) {
+      return res.status(500).json({ error: `SMTP Transport Exception: ${err.message}` });
+    }
+  }
+
+  return res.json({ success: true, message: `Email credentials set for ${doctorEmail}` });
 });
 
-// API: Doctor Admin Portal Patient Records
+// API: Patient Records
 app.get('/api/admin/records', async (req, res) => {
   try {
     const records = await googleSheetsService.getAllRecords();
@@ -171,7 +197,7 @@ if (require.main === module) {
     console.log(`\n==================================================`);
     console.log(`✨ AURA DENTAL STUDIO AI BACKEND RUNNING`);
     console.log(`📍 URL: http://localhost:${PORT}`);
-    console.log(`👨‍⚕️ Doctor Admin Portal: http://localhost:${PORT}/admin.html`);
+    console.log(`👨‍⚕️ Surgeon Admin Portal: http://localhost:${PORT}/admin.html`);
     console.log(`==================================================\n`);
   });
 }
