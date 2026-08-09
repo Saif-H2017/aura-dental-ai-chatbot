@@ -15,8 +15,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const publicDir = path.join(process.cwd(), 'public');
+const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
+
+// Explicit route for root & index.html with no-cache headers to bust Vercel Edge CDN cache
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.get('/index.html', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
 
 // Explicit favicon route handlers
 app.get('/favicon.ico', (req, res) => {
@@ -99,148 +110,150 @@ app.get('/api/slots', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const isUrgent = req.query.urgent === 'true';
     const slots = await googleCalendarService.getAvailableSlots(isUrgent);
-    res.json({ slots, serverPktTime: new Date(Date.now() + 5 * 3600 * 1000).toISOString() });
+    res.json({ slots, total: slots.length, timestamp: new Date().toISOString() });
   } catch (error) {
+    console.error("Error fetching slots:", error);
     res.status(500).json({ error: "Failed to fetch slots" });
   }
 });
 
-// API: Complete Appointment Booking
+// API: Book Appointment (Dispatches Email + Add to Google Calendar)
 app.post('/api/appointments/book', async (req, res) => {
   try {
     const { patientName, patientPhone, patientEmail, date, time, symptoms, painScore } = req.body;
 
     if (!patientName || !patientPhone || !patientEmail || !date || !time) {
-      return res.status(400).json({ error: "Missing required patient or slot details." });
+      return res.status(400).json({ error: "Missing required booking fields" });
     }
 
     const triageLevel = evaluateTriage(symptoms || "", painScore);
 
-    const bookingPayload = {
+    // 1. Book in Google Calendar Service
+    const calendarResult = await googleCalendarService.bookAppointment({
       patientName,
       patientPhone,
       patientEmail,
       date,
       time,
       triageLevel,
-      symptoms: symptoms || "Routine dental consultation",
-      painScore: painScore || 0
+      symptoms: symptoms || "General Consultation"
+    });
+
+    const appointmentRecord = {
+      id: calendarResult.bookingId,
+      patientName,
+      patientPhone,
+      patientEmail,
+      date,
+      time,
+      symptoms: symptoms || "General Consultation",
+      triageLevel: triageLevel.title,
+      triageCode: triageLevel.code,
+      status: "Confirmed",
+      gcalUrl: calendarResult.gcalUrl,
+      createdAt: new Date().toISOString()
     };
 
-    const calendarResult = await googleCalendarService.bookAppointment(bookingPayload);
+    // 2. Append to Database / Demo Memory
+    googleSheetsService.addAppointment(appointmentRecord);
 
-    const sheetsResult = await googleSheetsService.logAppointment({
-      ...bookingPayload,
-      bookingId: calendarResult.bookingId,
-      isEmergency: calendarResult.isEmergency
-    });
-
-    const notificationResult = await notificationService.sendAppointmentNotifications({
-      ...bookingPayload,
-      bookingId: calendarResult.bookingId,
-      isEmergency: calendarResult.isEmergency
-    });
+    // 3. Dispatch Dual Email Notifications (Patient Confirmation + Doctor Alert)
+    await notificationService.sendDualBookingNotifications(appointmentRecord);
 
     res.json({
       success: true,
       bookingId: calendarResult.bookingId,
-      summary: calendarResult.summary,
       date,
       time,
-      clinicAddress: calendarResult.clinicAddress,
-      triageLevel,
-      notifications: notificationResult.logs,
-      sheetsLogged: sheetsResult.success,
       gcalUrl: calendarResult.gcalUrl,
-      mode: calendarResult.mode
+      message: "Appointment confirmed! Email & Google Calendar link dispatched."
     });
 
   } catch (error) {
-    console.error("Error in /api/appointments/book:", error);
-    res.status(500).json({ error: "Booking execution failed", details: error.message });
+    console.error("Error booking appointment:", error);
+    res.status(500).json({ error: "Failed to process booking", details: error.message });
   }
 });
 
-// API: Save Resend API Key
-app.post('/api/admin/resend-config', (req, res) => {
-  const { resendApiKey } = req.body;
-  if (resendApiKey) {
-    notificationService.setResendApiKey(resendApiKey);
-    process.env.RESEND_API_KEY = resendApiKey;
-    console.log("⚡ Resend API Key updated via Admin Portal!");
-    return res.json({ success: true, message: "Resend Dual Email API connected successfully!" });
-  }
-  res.status(400).json({ error: "Resend API key is required." });
+// API: Get Admin Appointments List
+app.get('/api/admin/appointments', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const records = googleSheetsService.getAllAppointments();
+  res.json({ appointments: records });
 });
 
-// API: Mark Appointment as Completed
-app.post('/api/admin/records/complete', async (req, res) => {
-  try {
-    const { bookingId } = req.body;
-    if (!bookingId) return res.status(400).json({ error: "Booking ID is required." });
-    const result = await googleSheetsService.completeAppointment(bookingId);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to mark appointment as completed" });
-  }
+// API: Complete Appointment
+app.post('/api/admin/appointments/complete', (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ error: "Booking ID is required" });
+  
+  const success = googleSheetsService.completeAppointment(id);
+  res.json({ success, id });
 });
 
-// API: Clear Completed History
-app.delete('/api/admin/records/history', async (req, res) => {
-  try {
-    const result = await googleSheetsService.clearHistory();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to clear appointment history" });
-  }
+// API: Delete Completed History
+app.post('/api/admin/appointments/delete-history', (req, res) => {
+  const count = googleSheetsService.deleteCompletedHistory();
+  res.json({ success: true, count });
 });
 
-// API: Save Gemini API Key
+// API: Save Dynamic Gemini API Key
 app.post('/api/admin/config', (req, res) => {
-  const { apiKey } = req.body;
-  if (apiKey) {
-    process.env.GEMINI_API_KEY = apiKey;
-    geminiService.setApiKey(apiKey);
-    console.log("🔑 Gemini API Key updated via Admin Portal!");
-    return res.json({ success: true, message: "Gemini API key updated successfully." });
+  const { geminiKey } = req.body;
+  if (geminiKey) {
+    geminiService.setApiKey(geminiKey);
+    process.env.GEMINI_API_KEY = geminiKey;
+    res.json({ success: true, message: "Gemini API key updated successfully!" });
+  } else {
+    res.status(400).json({ error: "Invalid API key" });
   }
-  res.status(400).json({ error: "API key is required." });
 });
 
-// API: Patient Records
-app.get('/api/admin/records', async (req, res) => {
+// API: URGENT RECEPTION CALLBACK HANDLER
+app.post('/api/admin/callback', async (req, res) => {
   try {
-    const records = await googleSheetsService.getAllRecords();
-    res.json({ records, count: records.length });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch admin records" });
+    const { patientName, patientPhone } = req.body;
+    if (!patientName || !patientPhone) {
+      return res.status(400).json({ error: "Patient name and phone number required" });
+    }
+
+    console.log(`🚨 RECEPTION CALLBACK REQUESTED BY: ${patientName} (${patientPhone})`);
+
+    const callbackRecord = {
+      id: `CB-${Math.floor(1000 + Math.random() * 9000)}`,
+      patientName,
+      patientPhone,
+      patientEmail: "N/A (Callback Request)",
+      date: new Date().toISOString().split('T')[0],
+      time: "IMMEDIATE CALLBACK",
+      symptoms: "🚨 Urgent Phone Callback Requested via AI Receptionist",
+      triageLevel: "Urgent Callback",
+      triageCode: "SAME_DAY_URGENT",
+      status: "Pending Callback",
+      createdAt: new Date().toISOString()
+    };
+
+    googleSheetsService.addAppointment(callbackRecord);
+    await notificationService.sendDualBookingNotifications(callbackRecord);
+
+    res.json({ success: true, message: "Callback request registered!" });
+  } catch (err) {
+    console.error("Error handling callback request:", err);
+    res.status(500).json({ error: "Failed to process callback" });
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: "online",
-    appMode: process.env.APP_MODE || "demo",
-    clinic: process.env.CLINIC_NAME || "Aura Dental Studio London",
-    surgeon: process.env.SURGEON_NAME || "Dr. Alexander Wright, BDS",
-    integrations: {
-      gemini: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
-      resend: Boolean(process.env.RESEND_API_KEY),
-      googleCalendarServiceAccount: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL),
-      googleSheets: Boolean(process.env.GOOGLE_SPREADSHEET_ID),
-      twilioSms: Boolean(process.env.TWILIO_ACCOUNT_SID)
-    }
-  });
+// Catch-all route to serve index.html with no-cache headers
+app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-if (require.main === module) {
+// Start Server locally
+if (process.env.NODE_ENV !== 'production' && require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(`✨ AURA DENTAL STUDIO AI BACKEND RUNNING`);
-    console.log(`📍 URL: http://localhost:${PORT}`);
-    console.log(`👨‍⚕️ Surgeon Admin Portal: http://localhost:${PORT}/admin.html`);
-    console.log(`==================================================\n`);
+    console.log(`🚀 Server running locally at http://localhost:${PORT}`);
+    console.log(`🔐 Surgeon Admin Portal at http://localhost:${PORT}/admin`);
   });
 }
 
