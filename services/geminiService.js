@@ -10,7 +10,7 @@ class GeminiService {
     if (this.hasKey) {
       this._initGeminiModel();
     } else {
-      console.log("ℹ️ Gemini AI running in High-Performance Triage & Human Fallback Engine.");
+      console.log("ℹ️ Gemini AI running in High-Performance 6-Service UK Triage Engine.");
     }
   }
 
@@ -27,26 +27,21 @@ class GeminiService {
     return `
 You are Harley, an exceptionally empathetic, intelligent, natural, and refined AI Intake Concierge for Aura Dental Studio in Marylebone, London (Lead Surgeon: Dr. Alexander Wright, BDS).
 
-CLINIC KNOWLEDGE & POLICIES:
-- Location: 72 Harley Street, Marylebone, London W1G 7HG (Near Regent's Park & Bond Street stations).
-- Opening Hours: Monday-Friday 8:30 AM - 6:00 PM | Saturday 9:00 AM - 4:00 PM (Emergency slots only) | Sunday Closed.
-- Private Insurance: YES! We accept all major UK providers (Bupa, AXA Health, Simplyhealth, Aviva, WPA, Cigna, Allianz). We issue itemized receipts & claim forms for direct reimbursement.
-- Nervous Patients: We specialize in dental anxiety! Painless micro-needles, soothing warm towels, noise-canceling headphones, ceiling TVs, and conscious sedation available.
-- Fees & Pricing: Consultation & Examination (£95), Airflow Clean (£85), Emergency Triage (£120), Laser Whitening (£350), Invisalign (£1500+).
+CLINIC KNOWLEDGE & 6 UK SERVICE OFFERINGS:
+1. General & Airflow® Hygiene: Comprehensive oral exam, digital X-rays (£95), Airflow® spa stain removal (£85).
+2. Cosmetic & Composite Bonding: Hand-sculpted bonding, 6-shade laser whitening (£350), porcelain veneers.
+3. Invisalign® Clear Aligners: £1,500+, includes free 3D iTero® scan + whitening + retainers.
+4. Dental Implants & Restorative: Single implants, full arch, root canals, porcelain crowns.
+5. Same-Day Emergency Triage: Urgent pain relief (£120), dedicated emergency slots.
+6. Nervous Patients & IV Sedation: Anxiety-free care, conscious IV sedation, ceiling TVs, noise-canceling headphones.
 
 LIVE REAL-WORLD SLOTS:
 ${slotListText}
 
 EMERGENCY TRIAGE RULE (CRITICAL):
-If the patient mentions tooth pain, broken tooth, bleeding, or swelling:
+If the patient mentions severe pain, toothache, broken tooth, bleeding, swelling, or emergency:
 1. Express immediate empathy.
-2. Ask 2 quick triage questions:
-   - "Is there any facial swelling or active bleeding?"
-   - "On a scale of 1-10, how severe is your pain?"
-3. Offer the option to request an instant human reception callback.
-
-HUMAN CALLBACK RULE:
-If the user asks for a human, callback, or phone call, prompt them to provide their Full Name and Phone Number so reception can call them back within 15 minutes.
+2. Trigger high-priority triage path with immediate same-day slot reservations or emergency callback collection.
 `;
   }
 
@@ -69,7 +64,7 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
 
     if (triage.code === "CRITICAL_EMERGENCY") {
       return {
-        reply: `🚨 **CRITICAL SAFETY NOTICE**: Based on the symptoms described (${triage.matchedTrigger}), this may be a severe medical emergency. Please call **999** or go directly to your nearest NHS A&E hospital immediately.\n\nDr. Wright's clinic cannot safely delay acute airway or systemic emergencies. Stay safe!`,
+        reply: `🚨 **CRITICAL MEDICAL EMERGENCY SAFETY ALERT**:\nBased on symptoms described (${triage.matchedTrigger}), this indicates potential airway or systemic compromise. Please call **999** or go directly to your nearest NHS A&E hospital immediately.\n\nDr. Wright's clinic cannot delay acute airway emergencies. Stay safe!`,
         triage,
         bookingComplete: false,
         requiresEmergencyRouting: true
@@ -103,7 +98,15 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
     const msg = userMessage.toLowerCase().trim();
     const liveSlots = getLiveRealWorldSlots();
 
-    // 1. HUMAN CALLBACK / SPEAK TO RECEPTIONIST ("speak to human", "callback", "call me", "reception", "speak to someone")
+    // 1. INVISALIGN PRICING & CONSULTATION
+    if (msg.includes("invisalign") || msg.includes("aligner") || msg.includes("orthodontic") || msg.includes("straighten")) {
+      return {
+        reply: `💎 **Invisalign® Clear Aligners at Aura Dental Studio**\n\nTransform your smile discreetly with virtually invisible removable aligners!\n\n• **Invisalign® Treatment**: From £1,500 (Flexible monthly payment options from £125/mo)\n• **Package Includes**: Complimentary 3D iTero® Digital Outcome Simulation + Free Laser Teeth Whitening + Vivera® Retainers\n\nWould you like me to book your complimentary 3D scan with Dr. Wright?`,
+        triage
+      };
+    }
+
+    // 2. HUMAN CALLBACK / SPEAK TO RECEPTION
     if (
       msg.includes("human") ||
       msg.includes("callback") ||
@@ -120,25 +123,26 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 2. PAIN / EMERGENCY TRIAGE MODE ("tooth pain", "toothache", "broken", "bleeding", "swollen", "hurt")
+    // 3. URGENT TRIAGE MODE ("severe pain", "swelling", "broken tooth", "bleeding", "emergency tooth pain", "toothache")
     if (
       msg.includes("pain") ||
-      msg.includes("ache") ||
+      msg.includes("swelling") ||
+      msg.includes("swollen") ||
       msg.includes("broken") ||
       msg.includes("bleeding") ||
-      msg.includes("swollen") ||
-      msg.includes("hurt") ||
-      msg.includes("emergency")
+      msg.includes("emergency") ||
+      msg.includes("ache") ||
+      msg.includes("hurt")
     ) {
       const urgentSlot = liveSlots[0];
       return {
-        reply: `🚨 **EMERGENCY DENTAL TRIAGE INTAKE**\n\nI am so sorry to hear you are in discomfort! Let's check your symptoms immediately:\n\n1. **Is there any active facial swelling or uncontrollable bleeding?** (Yes / No)\n2. **On a scale of 1-10, how severe is your pain?**\n\nWe have a dedicated Emergency Slot reserved for **${urgentSlot.display}**. Or click **📞 Request Callback** to speak with our receptionist instantly!`,
+        reply: `🚨 **HIGH-PRIORITY EMERGENCY TRIAGE INTAKE**\n\nI am so sorry to hear you are experiencing discomfort! Let me reserve immediate relief for you:\n\n1. **Is there any active facial swelling or uncontrollable bleeding?** (Yes / No)\n2. **On a scale of 1-10, how severe is your pain right now?**\n\nWe have a high-priority Emergency Slot reserved for **${urgentSlot.display}**. Or click **📞 Speak to Reception** to request an instant 15-minute callback!`,
         triage,
         isUrgentPrompted: true
       };
     }
 
-    // 3. AFFIRMATIVE RESPONSES ("yes", "yeah", "sure", "okay", "yep", "ok", "please")
+    // 4. AFFIRMATIVE RESPONSES ("yes", "yeah", "sure", "okay", "yep", "ok", "please", "book appointment")
     if (
       msg === "yes" ||
       msg === "yeah" ||
@@ -148,8 +152,8 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       msg === "yep" ||
       msg === "please" ||
       msg === "alright" ||
-      msg.startsWith("yes ") ||
-      msg.startsWith("sure ")
+      msg.includes("book appointment") ||
+      msg.startsWith("yes ")
     ) {
       const formattedSlots = liveSlots.map((s, idx) => `• **Option ${idx + 1}**: ${s.display}`).join('\n');
       return {
@@ -159,7 +163,7 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 4. GRATITUDE / COURTESY ("thanks", "thank you", "cheers", "awesome", "great", "perfect", "cool")
+    // 5. GRATITUDE / COURTESY ("thanks", "thank you", "cheers", "awesome", "great", "perfect")
     if (
       msg.includes("thank") ||
       msg === "thanks" ||
@@ -175,14 +179,13 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 5. NEGATION ("no", "nope", "not now", "no thanks", "cancel", "nevermind")
+    // 6. NEGATION ("no", "nope", "not now", "no thanks", "cancel")
     if (
       msg === "no" ||
       msg === "nope" ||
       msg.includes("not right now") ||
       msg.includes("no thanks") ||
-      msg === "cancel" ||
-      msg === "nevermind"
+      msg === "cancel"
     ) {
       return {
         reply: `No problem at all! Feel free to reach out whenever you're ready to schedule your visit. Have a great day!`,
@@ -190,11 +193,11 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 6. SLOT SELECTION HANDLER (Option 1, Option 2, Option 3, Option 4, Option 5)
-    if (msg === "option 1" || msg === "1" || msg.includes("7:30")) {
+    // 7. SLOT SELECTION HANDLER (Option 1, 2, 3, 4, 5)
+    if (msg === "option 1" || msg === "1" || msg.includes("10:00") || msg.includes("10am")) {
       const s = liveSlots[0];
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent choice! I have reserved **${s.display}** for your consultation with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) so we can dispatch your instant confirmation email!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent choice! I have held **${s.display}** for your consultation with Dr. Alexander Wright.\n\nPlease click **Book Online** (or provide your **Full Name**, **Phone Number**, and **Email**) so we can send your instant email confirmation!`,
         triage,
         selectedSlot: s.display,
         slotDate: s.date,
@@ -203,10 +206,10 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    if (msg === "option 2" || msg === "2" || msg.includes("10:00") || msg.includes("10am")) {
+    if (msg === "option 2" || msg === "2" || msg.includes("2:15") || msg.includes("2:15pm")) {
       const s = liveSlots[1];
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nGreat choice! I have reserved **${s.display}** for your visit to Aura Dental Studio.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) to confirm your reservation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nGreat choice! I have reserved **${s.display}** for your visit to Aura Dental Studio.\n\nPlease click **Book Online** (or provide your **Full Name**, **Phone**, and **Email**) to confirm!`,
         triage,
         selectedSlot: s.display,
         slotDate: s.date,
@@ -215,10 +218,10 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    if (msg === "option 3" || msg === "3" || msg.includes("2:15") || msg.includes("2:15pm") || msg.includes("2:15 pm")) {
+    if (msg === "option 3" || msg === "3" || msg.includes("4:30") || msg.includes("4:30pm")) {
       const s = liveSlots[2];
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nPerfect! I have reserved **${s.display}** for your appointment with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or reply with your **Full Name**, **Phone Number**, and **Email Address**) so we can finalize your booking and send your email confirmation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nPerfect! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) to finalize!`,
         triage,
         selectedSlot: s.display,
         slotDate: s.date,
@@ -227,10 +230,10 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    if (msg === "option 4" || msg === "4" || msg.includes("11:30") || msg.includes("11:30am")) {
+    if (msg === "option 4" || msg === "4" || msg.includes("11:30")) {
       const s = liveSlots[3];
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nWonderful! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) so we can send your instant confirmation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nWonderful! I have reserved **${s.display}** for your visit.\n\nPlease click **Book Online** (or reply with your details) to confirm!`,
         triage,
         selectedSlot: s.display,
         slotDate: s.date,
@@ -239,10 +242,10 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    if (msg === "option 5" || msg === "5" || msg.includes("3:30") || msg.includes("3:30pm")) {
+    if (msg === "option 5" || msg === "5" || msg.includes("3:30")) {
       const s = liveSlots[4];
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) to finalize!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your details) to finalize!`,
         triage,
         selectedSlot: s.display,
         slotDate: s.date,
@@ -251,7 +254,7 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 7. DIRECT BOOKING INTENT HANDLER
+    // 8. DIRECT BOOKING INTENT HANDLER
     if (
       msg.includes("appointment") ||
       msg.includes("book") ||
@@ -273,7 +276,7 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 8. PRIVATE INSURANCE QUERY
+    // 9. PRIVATE INSURANCE QUERY
     if (msg.includes("insurance") || msg.includes("bupa") || msg.includes("axa") || msg.includes("simplyhealth") || msg.includes("aviva") || msg.includes("claim") || msg.includes("policy")) {
       return {
         reply: `💳 **Yes, we accept Private Health Insurance!**\n\nAura Dental Studio accepts all major UK private dental insurance providers, including:\n• **Bupa**\n• **AXA Health**\n• **Simplyhealth**\n• **Aviva**\n• **WPA & Cigna**\n\nWe provide itemized billing receipts and BDA clinical treatment codes so you can claim your reimbursement directly with zero hassle.`,
@@ -281,15 +284,15 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 9. NERVOUS / DENTAL ANXIETY QUERY
-    if (msg.includes("nervous") || msg.includes("anxious") || msg.includes("scared") || msg.includes("fear") || msg.includes("phobia") || msg.includes("painful")) {
+    // 10. NERVOUS PATIENT & IV SEDATION
+    if (msg.includes("nervous") || msg.includes("anxious") || msg.includes("scared") || msg.includes("fear") || msg.includes("phobia") || msg.includes("sedation") || msg.includes("sleep")) {
       return {
-        reply: `🧘 **We specialize in gentle care for nervous patients!**\n\nOver 40% of our patients felt anxious before visiting us. At Aura Dental Studio, we create a soothing, calm environment featuring:\n• Painless micro-needles & topical numbing gels\n• Noise-canceling headphones & warm aromatherapy towels\n• Ceiling TV screens during treatment\n• Gentle, patient-controlled pacing (you can stop us anytime!)\n\nDr. Wright and our team take all the time you need.`,
+        reply: `🧘 **Nervous Patients & Conscious IV Sedation**\n\nOver 40% of our patients felt anxious before visiting us. At Aura Dental Studio, we create a soothing environment featuring:\n• **Conscious IV Sedation**: Gentle twilight sleep where you feel completely relaxed & pain-free.\n• Painless micro-needles & topical numbing gels\n• Noise-canceling headphones & warm aromatherapy towels\n• Ceiling TV screens during treatment\n\nDr. Wright and our team take all the time you need.`,
         triage
       };
     }
 
-    // 10. LOCATION & PARKING
+    // 11. LOCATION & PARKING
     if (msg.includes("where") || msg.includes("address") || msg.includes("location") || msg.includes("find") || msg.includes("parking") || msg.includes("tube") || msg.includes("station")) {
       return {
         reply: `📍 **Clinic Location & Access**:\nWe are situated at **72 Harley Street, Marylebone, London W1G 7HG**.\n\n🚆 **Nearest Tube Stations**:\n• Regent's Park (Bakerloo Line - 5 min walk)\n• Bond Street (Central, Jubilee, Elizabeth Line - 7 min walk)\n\n🚗 **Parking**: Pay-and-display parking is available directly on Harley Street, or at Q-Park Cavendish Square.`,
@@ -297,7 +300,7 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 11. OPENING HOURS
+    // 12. OPENING HOURS
     if (msg.includes("hours") || msg.includes("open") || msg.includes("time") || msg.includes("weekend") || msg.includes("sunday")) {
       return {
         reply: `⏰ **Aura Dental Opening Hours**:\n• **Monday – Friday**: 08:30 AM – 06:00 PM\n• **Saturday**: 09:00 AM – 04:00 PM (Emergency slots only)\n• **Sunday**: Closed (24/7 AI Triage Active)\n\nSame-day emergency appointments are reserved daily for urgent toothache relief.`,
@@ -305,25 +308,25 @@ If the user asks for a human, callback, or phone call, prompt them to provide th
       };
     }
 
-    // 12. FEES & PRICING
+    // 13. FEES & PRICING
     if (msg.includes("cost") || msg.includes("price") || msg.includes("fee") || msg.includes("how much") || msg.includes("rate") || msg.includes("expensive")) {
       return {
-        reply: `💰 **Aura Dental Transparent Fee Guide**:\n• **New Patient Examination & Digital X-rays**: £95\n• **Airflow Hygiene Cleaning**: £85\n• **Emergency Pain Assessment**: £120\n• **6-Shade Laser Teeth Whitening**: £350\n• **Invisalign Consultation**: Complimentary 3D Scan\n\nAll treatment plans are provided with itemized costs before any procedure begins!`,
+        reply: `💰 **Aura Dental Transparent Fee Guide**:\n• **New Patient Examination & Digital X-rays**: £95\n• **Airflow® Hygiene Cleaning**: £85\n• **Emergency Pain Assessment**: £120\n• **6-Shade Laser Teeth Whitening**: £350\n• **Invisalign® Consultation**: Complimentary 3D iTero® Scan\n\nAll treatment plans are provided with itemized costs before any procedure begins!`,
         triage
       };
     }
 
-    // 13. GREETING
+    // 14. GREETING
     if (msg === "hi" || msg === "hello" || msg === "hey" || msg.startsWith("good morning") || msg.startsWith("good afternoon")) {
       return {
-        reply: `Hello! Welcome to Aura Dental Studio in Marylebone, London. I'm Harley, Dr. Wright's AI Concierge.\n\nHow can I help you today? Feel free to ask about our treatments, insurance coverage, clinic location, or booking a consultation.`,
+        reply: `Hello! Welcome to Aura Dental Studio in Marylebone, London. I'm Harley, Dr. Wright's AI Concierge.\n\nHow can I help you today? Feel free to ask about Invisalign®, Airflow® hygiene, IV sedation, emergency pain triage, or booking a consultation.`,
         triage
       };
     }
 
-    // 14. POLISHED HUMAN-LIKE RECEPTIONIST DEFAULT FALLBACK
+    // 15. POLISHED HUMAN-LIKE RECEPTIONIST DEFAULT FALLBACK
     return {
-      reply: `I would be happy to assist you! At Aura Dental Studio in Marylebone, Dr. Alexander Wright and our team are here to deliver gentle, state-of-the-art dental care.\n\nWould you like me to show you our available appointment slots, check treatment pricing, or answer questions about private insurance?`,
+      reply: `I would be happy to assist you! At Aura Dental Studio in Marylebone, Dr. Alexander Wright and our team are here to deliver gentle, state-of-the-art dental care.\n\nWould you like me to show you our available appointment slots, check Invisalign® pricing, or answer questions about private insurance?`,
       triage
     };
   }

@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon.ico?v=2">
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
   <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=2">
-  <link rel="stylesheet" href="css/styles.css?v=10">
+  <link rel="stylesheet" href="css/styles.css?v=11">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -77,12 +77,12 @@
     </div>
   </header>
 
-  <!-- 3. INTERACTIVE TREATMENT SELECTOR GRID -->
+  <!-- 3. EXPANDED 6-CARD TREATMENT GRID -->
   <section class="section-container" id="services">
     <div class="section-header">
       <div class="section-tag">Comprehensive Care</div>
       <h2 class="section-title">Tailored Treatments For Every Smile</h2>
-      <p class="section-subtitle">From routine checkups to emergency pain relief, our London clinic provides painless, state-of-the-art dental care.</p>
+      <p class="section-subtitle">From routine checkups and Invisalign® to same-day emergency pain relief, our London clinic provides painless, state-of-the-art dental care.</p>
     </div>
 
     <div class="treatment-grid">
@@ -90,8 +90,8 @@
       <div class="treatment-card">
         <div>
           <div class="treatment-icon">🩺</div>
-          <h3>General & Preventative</h3>
-          <p>Comprehensive oral examinations, digital X-rays, and gentle hygiene airflow cleanings to keep your teeth healthy.</p>
+          <h3>General & Airflow® Hygiene</h3>
+          <p>Comprehensive oral examinations, digital low-radiation X-rays, and painless Airflow® spa stain removal for vibrant teeth & healthy gums.</p>
         </div>
         <span class="treatment-badge standard">Routine Care</span>
       </div>
@@ -100,30 +100,50 @@
       <div class="treatment-card">
         <div>
           <div class="treatment-icon">✨</div>
-          <h3>Cosmetic Dentistry</h3>
-          <p>Transform your smile with professional laser teeth whitening, custom porcelain veneers, and subtle composite bonding.</p>
+          <h3>Cosmetic & Composite Bonding</h3>
+          <p>Transform your smile with hand-sculpted composite bonding, 6-shade laser teeth whitening, and handcrafted ultra-thin porcelain veneers.</p>
         </div>
         <span class="treatment-badge standard">Cosmetic</span>
       </div>
 
-      <!-- CARD 3 (EMERGENCY) -->
-      <div class="treatment-card" style="border-color: var(--emergency-border); background: #FFFBFB;">
+      <!-- CARD 3 -->
+      <div class="treatment-card">
         <div>
-          <div class="treatment-icon">🚨</div>
-          <h3>Emergency Care</h3>
-          <p>Instant relief for severe toothache, swelling, broken teeth, or lost fillings with immediate dentist mobile alerts.</p>
+          <div class="treatment-icon">💎</div>
+          <h3>Invisalign® Clear Aligners</h3>
+          <p>Discrete, virtually invisible removable aligners to straighten teeth. Includes complimentary 3D iTero® digital smile outcome simulation.</p>
         </div>
-        <span class="treatment-badge emergency">Same-Day Guarantee</span>
+        <span class="treatment-badge standard" style="background: rgba(56, 189, 248, 0.18); color: var(--brand-navy);">Orthodontics</span>
       </div>
 
       <!-- CARD 4 -->
       <div class="treatment-card">
         <div>
           <div class="treatment-icon">🦷</div>
-          <h3>Restorative Dentistry</h3>
-          <p>Long-lasting dental implants, natural-looking porcelain crowns, and minimally invasive root canal therapy.</p>
+          <h3>Dental Implants & Restorative</h3>
+          <p>Permanent single dental implants, full-arch teeth-in-a-day, and natural-looking porcelain crowns engineered for lifelong strength.</p>
         </div>
         <span class="treatment-badge standard">Restorative</span>
+      </div>
+
+      <!-- CARD 5 (EMERGENCY) -->
+      <div class="treatment-card" style="border-color: var(--emergency-border); background: #FFFBFB;">
+        <div>
+          <div class="treatment-icon">🚨</div>
+          <h3>Same-Day Emergency Triage</h3>
+          <p>Rapid pain relief for severe toothache, facial swelling, broken teeth, or dental trauma with daily reserved emergency slots.</p>
+        </div>
+        <span class="treatment-badge emergency">Same-Day Guarantee</span>
+      </div>
+
+      <!-- CARD 6 (NERVOUS PATIENTS) -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">🧘</div>
+          <h3>Nervous Patients & IV Sedation</h3>
+          <p>Specialized anxiety-free care featuring painless micro-needles, gentle conscious IV sedation, noise-canceling headphones, and ceiling TVs.</p>
+        </div>
+        <span class="treatment-badge standard" style="background: var(--accent-sage-light); color: var(--accent-sage);">Sedation & Calm</span>
       </div>
     </div>
   </section>
@@ -222,9 +242,10 @@
 
     <!-- SAMPLE QUICK ACTION CHIPS -->
     <div class="drawer-quick-chips">
-      <button class="drawer-chip" onclick="sendDrawerChip('Book a Cleaning')">📅 Book a Cleaning</button>
-      <button class="drawer-chip" style="color: var(--emergency-red);" onclick="sendDrawerChip('I have a Dental Emergency!')">🚨 Emergency Pain Triage</button>
-      <button class="drawer-chip" style="color: var(--brand-navy); font-weight:700;" onclick="sendDrawerChip('Request a Callback')">📞 Speak to Reception</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Book Appointment')">📅 Book Appointment</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Invisalign Pricing')">💎 Invisalign Pricing</button>
+      <button class="drawer-chip" style="color: var(--emergency-red); font-weight:700;" onclick="sendDrawerChip('Emergency Tooth Pain')">🚨 Emergency Tooth Pain</button>
+      <button class="drawer-chip" style="color: var(--brand-navy); font-weight:700;" onclick="sendDrawerChip('Speak to Reception')">📞 Speak to Reception</button>
       <button class="drawer-chip" onclick="sendDrawerChip('Do you accept Private Insurance?')">💳 Private Insurance?</button>
       <button class="drawer-chip" onclick="sendDrawerChip('Where are you located?')">📍 Clinic Location</button>
     </div>
@@ -298,6 +319,6 @@
   </footer>
 
   <script src="js/reviewsData.js?v=1"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/app.js?v=11"></script>
 </body>
 </html>

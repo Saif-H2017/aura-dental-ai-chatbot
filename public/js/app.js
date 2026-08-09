@@ -246,7 +246,7 @@ function sendDrawerChip(text) {
   sendDrawerMessageToBot(text);
 }
 
-// High-Speed Instant Response Sender (Optimized Latency)
+// High-Speed Response Sender with Dynamic 1.2s – 1.5s Typing Delay
 async function sendDrawerMessageToBot(text) {
   showTypingIndicator();
   const startTime = Date.now();
@@ -264,9 +264,10 @@ async function sendDrawerMessageToBot(text) {
 
     const data = await res.json();
 
-    // Fast sub-second latency delay (400ms for natural feel)
+    // Dynamic 1.2s – 1.5s natural human response delay window
+    const targetDelay = Math.floor(Math.random() * 300) + 1200; // 1200ms to 1500ms
     const elapsed = Date.now() - startTime;
-    const remainingDelay = Math.max(0, 400 - elapsed);
+    const remainingDelay = Math.max(0, targetDelay - elapsed);
     await new Promise(resolve => setTimeout(resolve, remainingDelay));
 
     removeTypingIndicator();
