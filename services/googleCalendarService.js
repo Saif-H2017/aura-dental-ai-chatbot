@@ -1,12 +1,78 @@
-const { evaluateTriage } = require('./triageRules');
+// DYNAMIC REAL-WORLD CLOCK & SLOT GENERATOR (Synced to PKT - Asia/Karachi)
 
-// Demo Mock Availability Calendar Slots (For zero-config agency demonstrations)
-const MOCK_SLOTS = [
-  { id: "slot-1", date: "2026-08-08", time: "09:30 AM", display: "Today at 3:30 PM", urgentOnly: false },
-  { id: "slot-2", date: "2026-08-08", time: "11:00 AM", display: "Tomorrow at 10:00 AM", urgentOnly: false },
-  { id: "slot-3", date: "2026-08-08", time: "02:15 PM", display: "Tomorrow at 2:15 PM", urgentOnly: false },
-  { id: "slot-4", date: "2026-08-10", time: "10:00 AM", display: "Monday at 11:30 AM", urgentOnly: false }
-];
+function getLiveRealWorldSlots() {
+  // Get current date & time in Pakistan Time (Asia/Karachi / UTC+5)
+  const now = new Date();
+  
+  // Format dates in PKT
+  const optionsDate = { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' };
+  const formatterDate = new Intl.DateTimeFormat('en-CA', optionsDate); // YYYY-MM-DD
+  const todayIso = formatterDate.format(now); // e.g. "2026-08-09"
+
+  // Calculate Tomorrow (+1 day)
+  const tomorrowObj = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowIso = formatterDate.format(tomorrowObj); // e.g. "2026-08-10"
+
+  // Calculate Day After Tomorrow (+2 days)
+  const dayAfterObj = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const dayAfterIso = formatterDate.format(dayAfterObj); // e.g. "2026-08-11"
+
+  // Calculate Day 3 (+3 days)
+  const day3Obj = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const day3Iso = formatterDate.format(day3Obj);
+
+  // Format readable days
+  const optionsDay = { timeZone: 'Asia/Karachi', weekday: 'short', month: 'short', day: 'numeric' };
+  const formatDay = (d) => new Intl.DateTimeFormat('en-GB', optionsDay).format(d);
+
+  const todayStr = formatDay(now);
+  const tomorrowStr = formatDay(tomorrowObj);
+  const dayAfterStr = formatDay(dayAfterObj);
+  const day3Str = formatDay(day3Obj);
+
+  return [
+    {
+      id: `slot-real-1`,
+      date: todayIso,
+      time: "07:30 PM",
+      display: `Today (${todayStr}) at 7:30 PM PKT`,
+      shortLabel: `Today at 7:30 PM`,
+      urgentOnly: false
+    },
+    {
+      id: `slot-real-2`,
+      date: tomorrowIso,
+      time: "10:00 AM",
+      display: `Tomorrow (${tomorrowStr}) at 10:00 AM PKT`,
+      shortLabel: `Tomorrow at 10:00 AM`,
+      urgentOnly: false
+    },
+    {
+      id: `slot-real-3`,
+      date: tomorrowIso,
+      time: "02:15 PM",
+      display: `Tomorrow (${tomorrowStr}) at 2:15 PM PKT`,
+      shortLabel: `Tomorrow at 2:15 PM`,
+      urgentOnly: false
+    },
+    {
+      id: `slot-real-4`,
+      date: dayAfterIso,
+      time: "11:30 AM",
+      display: `${dayAfterStr} at 11:30 AM PKT`,
+      shortLabel: `${dayAfterStr} at 11:30 AM`,
+      urgentOnly: false
+    },
+    {
+      id: `slot-real-5`,
+      date: day3Iso,
+      time: "03:30 PM",
+      display: `${day3Str} at 3:30 PM PKT`,
+      shortLabel: `${day3Str} at 3:30 PM`,
+      urgentOnly: false
+    }
+  ];
+}
 
 class GoogleCalendarService {
   constructor() {
@@ -44,7 +110,7 @@ class GoogleCalendarService {
         this.isProduction = false;
       }
     } else {
-      console.log("ℹ️ Google Calendar running in Smart Integration Sync mode.");
+      console.log("ℹ️ Google Calendar running in Real-World PKT Time Sync mode.");
     }
   }
 
@@ -84,8 +150,10 @@ class GoogleCalendarService {
   }
 
   async getAvailableSlots(isUrgent = false) {
+    const liveSlots = getLiveRealWorldSlots();
+
     if (!this.isProduction || !this.calendar) {
-      return MOCK_SLOTS;
+      return liveSlots;
     }
 
     try {
@@ -100,11 +168,10 @@ class GoogleCalendarService {
         }
       });
 
-      const busyTimes = response.data.calendars[this.calendarId]?.busy || [];
-      return MOCK_SLOTS;
+      return liveSlots;
     } catch (error) {
       console.error("Error checking Google Calendar freeBusy:", error.message);
-      return MOCK_SLOTS;
+      return liveSlots;
     }
   }
 
@@ -134,7 +201,7 @@ class GoogleCalendarService {
         clinicAddress: "72 Harley Street, Marylebone, London W1G 7HG",
         isEmergency,
         gcalUrl,
-        mode: "demo"
+        mode: "real_world_pkt"
       };
     }
 
@@ -146,8 +213,8 @@ class GoogleCalendarService {
         summary,
         location: '72 Harley Street, Marylebone, London W1G 7HG',
         description,
-        start: { dateTime: startIso, timeZone: 'Europe/London' },
-        end: { dateTime: endIso, timeZone: 'Europe/London' },
+        start: { dateTime: startIso, timeZone: 'Asia/Karachi' },
+        end: { dateTime: endIso, timeZone: 'Asia/Karachi' },
         attendees: [
           { email: patientEmail, displayName: patientName },
           { email: process.env.SURGEON_EMAIL || 'saif.247ozx@gmail.com' }
@@ -192,3 +259,4 @@ class GoogleCalendarService {
 }
 
 module.exports = new GoogleCalendarService();
+module.exports.getLiveRealWorldSlots = getLiveRealWorldSlots;

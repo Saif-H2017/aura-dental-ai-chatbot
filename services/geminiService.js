@@ -1,33 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { evaluateTriage } = require('./triageRules');
-
-const SYSTEM_PROMPT = `
-You are Harley, an exceptionally empathetic, intelligent, and refined AI Intake Concierge for Aura Dental Studio in Marylebone, London (Lead Surgeon: Dr. Alexander Wright, BDS).
-
-CLINIC KNOWLEDGE & POLICIES:
-- Location: 72 Harley Street, Marylebone, London W1G 7HG (Near Regent's Park & Bond Street stations).
-- Opening Hours: Monday-Friday 8:30 AM - 6:00 PM | Saturday 9:00 AM - 4:00 PM (Emergency slots only) | Sunday Closed.
-- Private Insurance: YES! We accept all major UK providers (Bupa, AXA Health, Simplyhealth, Aviva, WPA, Cigna, Allianz). We issue itemized receipts & claim forms for direct reimbursement.
-- Nervous Patients: We specialize in dental anxiety! Painless micro-needles, soothing warm towels, noise-canceling headphones, ceiling TVs, and conscious sedation available.
-- Fees & Pricing: Consultation & Examination (£95), Airflow Clean (£85), Emergency Triage (£120), Laser Whitening (£350), Invisalign (£1500+).
-
-AVAILABLE APPOINTMENT SLOTS:
-- Option 1: Today at 3:30 PM (Urgent / Standard)
-- Option 2: Tomorrow at 10:00 AM
-- Option 3: Tomorrow at 2:15 PM
-- Option 4: Monday at 11:30 AM
-
-BOOKING INTENT RULE (CRITICAL):
-If the patient mentions "appointment", "book", "schedule", "slot", "visit", "see doctor", "checkup", "cleaning", "consultation", or "need an appointment":
-1. IMMEDIATELY output the clean list of available slots (Option 1, Option 2, Option 3, Option 4).
-2. DO NOT output long corporate introductions or ask if they need help booking. Display the slots directly!
-
-SLOT SELECTION RULE (CRITICAL):
-If the patient selects a slot (e.g., "option 3", "2:15 pm", "option 2", "10am", "3:30", "1", "2", "3", "4"):
-1. Acknowledge and confirm their selected slot choice warmly (e.g. "Excellent! I have held Tomorrow at 2:15 PM for your appointment.").
-2. Ask them to provide their Full Name, Mobile Phone Number, and Email Address so we can finalize their reservation and send their confirmation email.
-3. DO NOT repeat the list of slots once a patient has chosen one!
-`;
+const { getLiveRealWorldSlots } = require('./googleCalendarService');
 
 class GeminiService {
   constructor() {
@@ -37,7 +10,7 @@ class GeminiService {
     if (this.hasKey) {
       this._initGeminiModel();
     } else {
-      console.log("ℹ️ Gemini AI running in Smart Knowledge Engine.");
+      console.log("ℹ️ Gemini AI running in Live Real-World PKT Clock Engine.");
     }
   }
 
@@ -47,14 +20,44 @@ class GeminiService {
     this._initGeminiModel();
   }
 
+  _getSystemPrompt() {
+    const slots = getLiveRealWorldSlots();
+    const slotListText = slots.map((s, idx) => `- Option ${idx + 1}: ${s.display}`).join('\n');
+
+    return `
+You are Harley, an exceptionally empathetic, intelligent, and refined AI Intake Concierge for Aura Dental Studio in Marylebone, London (Lead Surgeon: Dr. Alexander Wright, BDS).
+
+CLINIC KNOWLEDGE & POLICIES:
+- Location: 72 Harley Street, Marylebone, London W1G 7HG (Near Regent's Park & Bond Street stations).
+- Opening Hours: Monday-Friday 8:30 AM - 6:00 PM | Saturday 9:00 AM - 4:00 PM (Emergency slots only) | Sunday Closed.
+- Private Insurance: YES! We accept all major UK providers (Bupa, AXA Health, Simplyhealth, Aviva, WPA, Cigna, Allianz). We issue itemized receipts & claim forms for direct reimbursement.
+- Nervous Patients: We specialize in dental anxiety! Painless micro-needles, soothing warm towels, noise-canceling headphones, ceiling TVs, and conscious sedation available.
+- Fees & Pricing: Consultation & Examination (£95), Airflow Clean (£85), Emergency Triage (£120), Laser Whitening (£350), Invisalign (£1500+).
+
+LIVE REAL-WORLD SLOTS (PKT TIMEZONE):
+${slotListText}
+
+BOOKING INTENT RULE (CRITICAL):
+If the patient mentions "appointment", "book", "schedule", "slot", "visit", "see doctor", "checkup", "cleaning", "consultation", or "need an appointment":
+1. IMMEDIATELY output the clean list of available slots (Option 1, Option 2, Option 3, Option 4, Option 5).
+2. DO NOT output long corporate introductions. Display the slots directly!
+
+SLOT SELECTION RULE (CRITICAL):
+If the patient selects a slot (e.g., "option 3", "2:15 pm", "option 2", "10am", "1", "2", "3", "4", "5"):
+1. Acknowledge and confirm their selected slot choice warmly.
+2. Ask them to provide their Full Name, Mobile Phone Number, and Email Address so we can finalize their reservation and send their confirmation email.
+3. DO NOT repeat the list of slots once a patient has chosen one!
+`;
+  }
+
   _initGeminiModel() {
     try {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       this.model = this.genAI.getGenerativeModel({
         model: 'gemini-1.5-flash-latest',
-        systemInstruction: SYSTEM_PROMPT
+        systemInstruction: this._getSystemPrompt()
       });
-      console.log("✅ Gemini AI Engine initialized successfully with live key.");
+      console.log("✅ Gemini AI Engine initialized with Live Real-World PKT Clock System Prompt.");
     } catch (err) {
       console.error("⚠️ Failed to init Gemini AI:", err.message);
       this.hasKey = false;
@@ -98,45 +101,70 @@ class GeminiService {
 
   _simulateResponse(chatHistory, userMessage, triage, draft) {
     const msg = userMessage.toLowerCase().trim();
+    const liveSlots = getLiveRealWorldSlots();
 
-    // 1. SLOT SELECTION HANDLER (Option 1, Option 2, Option 3, 2:15, 10:00, 3:30, etc.)
-    if (msg === "option 1" || msg === "1" || msg.includes("3:30")) {
+    // 1. SLOT SELECTION HANDLER (Option 1, Option 2, Option 3, Option 4, Option 5)
+    if (msg === "option 1" || msg === "1" || msg.includes("7:30")) {
+      const s = liveSlots[0];
       return {
-        reply: `🎉 **Slot Selected: Today at 3:30 PM**\n\nExcellent choice! I have reserved **Today at 3:30 PM** for your consultation with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) so we can dispatch your instant confirmation email!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent choice! I have held **${s.display}** for your consultation with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) so we can dispatch your instant confirmation email!`,
         triage,
-        selectedSlot: "Today at 3:30 PM",
+        selectedSlot: s.display,
+        slotDate: s.date,
+        slotTime: s.time,
         promptForDetails: true
       };
     }
 
     if (msg === "option 2" || msg === "2" || msg.includes("10:00") || msg.includes("10am")) {
+      const s = liveSlots[1];
       return {
-        reply: `🎉 **Slot Selected: Tomorrow at 10:00 AM**\n\nGreat choice! I have held **Tomorrow at 10:00 AM** for your visit to Aura Dental Studio.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) to confirm your reservation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nGreat choice! I have reserved **${s.display}** for your visit to Aura Dental Studio.\n\nPlease click the **Book Online** button (or provide your **Full Name**, **Phone Number**, and **Email Address**) to confirm your reservation!`,
         triage,
-        selectedSlot: "Tomorrow at 10:00 AM",
+        selectedSlot: s.display,
+        slotDate: s.date,
+        slotTime: s.time,
         promptForDetails: true
       };
     }
 
     if (msg === "option 3" || msg === "3" || msg.includes("2:15") || msg.includes("2:15pm") || msg.includes("2:15 pm")) {
+      const s = liveSlots[2];
       return {
-        reply: `🎉 **Slot Selected: Tomorrow at 2:15 PM**\n\nPerfect! I have held **Tomorrow at 2:15 PM** for your appointment with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or reply with your **Full Name**, **Phone Number**, and **Email Address**) so we can finalize your booking and send your email confirmation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nPerfect! I have reserved **${s.display}** for your appointment with Dr. Alexander Wright.\n\nPlease click the **Book Online** button (or reply with your **Full Name**, **Phone Number**, and **Email Address**) so we can finalize your booking and send your email confirmation!`,
         triage,
-        selectedSlot: "Tomorrow at 2:15 PM",
+        selectedSlot: s.display,
+        slotDate: s.date,
+        slotTime: s.time,
         promptForDetails: true
       };
     }
 
-    if (msg === "option 4" || msg === "4" || msg.includes("monday") || msg.includes("11:30")) {
+    if (msg === "option 4" || msg === "4" || msg.includes("11:30") || msg.includes("11:30am")) {
+      const s = liveSlots[3];
       return {
-        reply: `🎉 **Slot Selected: Monday at 11:30 AM**\n\nWonderful! I have reserved **Monday at 11:30 AM** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) so we can send your instant confirmation!`,
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nWonderful! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) so we can send your instant confirmation!`,
         triage,
-        selectedSlot: "Monday at 11:30 AM",
+        selectedSlot: s.display,
+        slotDate: s.date,
+        slotTime: s.time,
         promptForDetails: true
       };
     }
 
-    // 2. DIRECT BOOKING INTENT HANDLER (appointment, book, schedule, slot, visit, see doctor, checkup, cleaning, consultation, etc.)
+    if (msg === "option 5" || msg === "5" || msg.includes("3:30") || msg.includes("3:30pm")) {
+      const s = liveSlots[4];
+      return {
+        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) to finalize!`,
+        triage,
+        selectedSlot: s.display,
+        slotDate: s.date,
+        slotTime: s.time,
+        promptForDetails: true
+      };
+    }
+
+    // 2. DIRECT BOOKING INTENT HANDLER
     if (
       msg.includes("appointment") ||
       msg.includes("book") ||
@@ -150,8 +178,9 @@ class GeminiService {
       msg.includes("reserve") ||
       msg.includes("see dentist")
     ) {
+      const formattedSlots = liveSlots.map((s, idx) => `• **Option ${idx + 1}**: ${s.display}`).join('\n');
       return {
-        reply: `📅 **Available Appointment Slots at Aura Dental Studio**:\n\n• **Option 1**: Today at 3:30 PM (Urgent / Standard)\n• **Option 2**: Tomorrow at 10:00 AM\n• **Option 3**: Tomorrow at 2:15 PM\n• **Option 4**: Monday at 11:30 AM\n\nWhich option (1, 2, 3, or 4) works best for you?`,
+        reply: `📅 **Live Real-World Available Slots at Aura Dental Studio (PKT)**:\n\n${formattedSlots}\n\nWhich option (1, 2, 3, 4, or 5) works best for you?`,
         triage,
         suggestSlots: true
       };
@@ -199,8 +228,9 @@ class GeminiService {
 
     // 8. URGENT DENTAL PAIN / EMERGENCY
     if (triage.code === "SAME_DAY_URGENT" || msg.includes("severe pain") || msg.includes("emergency") || msg.includes("broken tooth") || msg.includes("bleeding") || msg.includes("swelling")) {
+      const urgentSlot = liveSlots[0];
       return {
-        reply: `🚨 **SAME-DAY URGENT CARE FLAGGED**\n\nI understand you are experiencing discomfort (${triage.title}). Dr. Alexander Wright reserves dedicated emergency slots every day for urgent pain relief.\n\nWould you like me to book you into our next available emergency slot today at 3:30 PM?`,
+        reply: `🚨 **SAME-DAY URGENT CARE FLAGGED**\n\nI understand you are experiencing discomfort (${triage.title}). Dr. Alexander Wright reserves dedicated emergency slots every day for urgent pain relief.\n\nWould you like me to book you into our next available emergency slot ${urgentSlot.display}?`,
         triage,
         isUrgentPrompted: true
       };

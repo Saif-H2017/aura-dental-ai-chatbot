@@ -2,6 +2,35 @@ let chatHistory = [];
 let currentBookingDraft = {};
 let recognition = null;
 
+// Dynamic Real-World Slot Fetcher (PKT Synced)
+async function loadLiveRealWorldSlots() {
+  try {
+    const res = await fetch('/api/slots');
+    const data = await res.json();
+    const slots = data.slots || [];
+    
+    // Populate Modal Dropdown
+    const select = document.getElementById('slotSelect');
+    if (select && slots.length > 0) {
+      select.innerHTML = slots.map(s => `
+        <option value="${s.date}|${s.time}">${s.display || s.shortLabel}</option>
+      `).join('');
+    }
+
+    // Populate Hero Chips
+    const chipsGrid = document.querySelector('.slot-chips-grid');
+    if (chipsGrid && slots.length > 0) {
+      chipsGrid.innerHTML = slots.slice(0, 4).map(s => `
+        <button class="slot-chip-btn" onclick="selectSlotAndBook('${s.date}', '${s.time}')">${s.shortLabel || s.display}</button>
+      `).join('');
+    }
+  } catch (e) {
+    console.error("Failed to load live slots:", e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadLiveRealWorldSlots);
+
 // Web Audio API Synthesized Chimes
 function playAudioChime(type = 'response') {
   try {
@@ -127,9 +156,9 @@ function toggleAIDrawer() {
 }
 
 // Quick Slot Selection from Hero Card
-function selectSlotAndBook(day, time) {
+function selectSlotAndBook(date, time) {
   const select = document.getElementById('slotSelect');
-  const matchingOpt = Array.from(select.options).find(opt => opt.text.includes(day) && opt.text.includes(time));
+  const matchingOpt = Array.from(select.options).find(opt => opt.value.includes(date) || opt.text.includes(time));
   if (matchingOpt) {
     select.value = matchingOpt.value;
   }
@@ -191,11 +220,11 @@ async function sendDrawerMessageToBot(text) {
       appendDrawerBubble(data.reply, 'bot');
     }
 
-    // IF USER SELECTED A SLOT (Option 1, 2, 3, 4, 2:15, 10:00, 3:30), OPEN BOOKING MODAL TO FINALIZE DETAILS
+    // IF USER SELECTED A SLOT (Option 1, 2, 3, 4, 5), OPEN BOOKING MODAL TO FINALIZE DETAILS
     if (data.promptForDetails || data.selectedSlot) {
-      if (data.selectedSlot) {
+      if (data.slotDate && data.slotTime) {
         const select = document.getElementById('slotSelect');
-        const matchingOpt = Array.from(select.options).find(opt => opt.text.includes(data.selectedSlot) || data.selectedSlot.includes(opt.text.split(' ')[0]));
+        const matchingOpt = Array.from(select.options).find(opt => opt.value.includes(data.slotDate));
         if (matchingOpt) select.value = matchingOpt.value;
       }
       setTimeout(() => {
