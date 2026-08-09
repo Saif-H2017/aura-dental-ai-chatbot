@@ -1,12 +1,10 @@
 const https = require('https');
-const url = require('url');
 
 class NotificationService {
   constructor() {
+    this.resendApiKey = process.env.RESEND_API_KEY || null;
     this.isTwilioConfigured = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
-    this.isEmailConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
-    this.formspreeUrl = process.env.FORMSPREE_URL || null;
-
+    
     if (this.isTwilioConfigured) {
       try {
         const twilioLib = require('twilio');
@@ -15,47 +13,21 @@ class NotificationService {
         this.isTwilioConfigured = false;
       }
     }
-
-    if (this.isEmailConfigured) {
-      this._initTransporter();
-    }
   }
 
-  setFormspreeUrl(endpoint) {
-    this.formspreeUrl = endpoint;
-    process.env.FORMSPREE_URL = endpoint;
-  }
-
-  setEmailConfig(user, pass) {
-    process.env.SMTP_USER = user;
-    process.env.SMTP_PASS = pass;
-    this.isEmailConfigured = true;
-    this._initTransporter();
-  }
-
-  _initTransporter() {
-    try {
-      const nodemailer = require('nodemailer');
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      });
-    } catch (e) {
-      this.isEmailConfigured = false;
-    }
+  setResendApiKey(key) {
+    this.resendApiKey = key;
+    process.env.RESEND_API_KEY = key;
   }
 
   /**
-   * Dispatch dual notifications: 
-   * 1. Email FROM Doctor TO Patient (Confirmation)
+   * Dispatch dual notifications via Resend API: 
+   * 1. Email FROM Aura Dental TO Patient (Confirmation)
    * 2. Email FROM AI Receptionist TO Doctor (Alert)
    */
   async sendAppointmentNotifications(bookingDetails) {
     const { bookingId, patientName, patientPhone, patientEmail, date, time, triageLevel, symptoms, isEmergency } = bookingDetails;
-    const doctorEmail = process.env.SURGEON_EMAIL || process.env.SMTP_USER || "dr.wright@auradental.co.uk";
+    const doctorEmail = process.env.SURGEON_EMAIL || "dr.wright@auradental.co.uk";
     const doctorPhone = process.env.SURGEON_PHONE || "+447911123456";
     const clinicName = process.env.CLINIC_NAME || "Aura Dental Studio London";
 
@@ -69,7 +41,7 @@ class NotificationService {
     let doctorSmsResult = await this._sendSms(doctorPhone, doctorSmsMsg);
     logs.push({ recipient: `Doctor SMS (${doctorPhone})`, type: "SMS", status: doctorSmsResult.status, detail: doctorSmsResult.detail });
 
-    // 2. EMAIL DISPATCH (FORMSPREE / WEBHOOK OR NODEMAILER OR DEMO MODE)
+    // 2. EMAIL 1: TO PATIENT (Confirmation)
     const patientEmailSubject = `✨ Appointment Confirmation - ${clinicName} [Ref: ${bookingId}]`;
     const patientEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #FAF7F2; padding: 20px; border-radius: 16px;">
@@ -107,46 +79,32 @@ class NotificationService {
       </div>
     `;
 
-    // Dispatch via Formspree Webhook if configured, else Nodemailer
-    if (this.formspreeUrl) {
-      const webhookRes = await this._sendFormspreeWebhook({
-        bookingId,
-        patientName,
-        patientPhone,
-        patientEmail,
-        doctorEmail,
-        date,
-        time,
-        symptoms,
-        triageLevel: triageLevel.title
-      });
-      logs.push({ recipient: `Patient & Doctor (Formspree)`, type: "FORMSPREE WEBHOOK", status: webhookRes.status, detail: webhookRes.detail });
-    } else {
-      let patientEmailRes = await this._sendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
-      logs.push({ recipient: `Patient (${patientEmail})`, type: "EMAIL TO PATIENT", status: patientEmailRes.status, detail: patientEmailRes.detail });
+    const patientRes = await this._sendResendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
+    logs.push({ recipient: `Patient (${patientEmail})`, type: "RESEND EMAIL TO PATIENT", status: patientRes.status, detail: patientRes.detail });
 
-      const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
-      const doctorEmailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0F172A; padding: 20px; border-radius: 16px; color: white;">
-          <h2 style="color: ${isEmergency ? '#EF4444' : '#38BDF8'}; margin-top: 0;">
-            ${isEmergency ? '🚨 URGENT EMERGENCY DENTAL APPOINTMENT' : '📅 NEW PATIENT BOOKING'}
-          </h2>
-          <p style="color: #cbd5e1; font-size: 15px;">A patient has just booked an appointment via the 24/7 AI Receptionist.</p>
-          
-          <div style="background: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
-            <p style="margin: 6px 0;"><strong>👤 Patient Name:</strong> ${patientName}</p>
-            <p style="margin: 6px 0;"><strong>📞 Phone:</strong> <a href="tel:${patientPhone}" style="color: #38BDF8;">${patientPhone}</a></p>
-            <p style="margin: 6px 0;"><strong>✉️ Email:</strong> ${patientEmail}</p>
-            <p style="margin: 6px 0;"><strong>🗓️ Requested Slot:</strong> ${date} at ${time}</p>
-            <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageLevel.title}</p>
-            <p style="margin: 6px 0;"><strong>🩺 Symptoms / Notes:</strong> ${symptoms}</p>
-            <p style="margin: 6px 0;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
-          </div>
+    // 3. EMAIL 2: TO DOCTOR (Alert)
+    const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
+    const doctorEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0F172A; padding: 20px; border-radius: 16px; color: white;">
+        <h2 style="color: ${isEmergency ? '#EF4444' : '#38BDF8'}; margin-top: 0;">
+          ${isEmergency ? '🚨 URGENT EMERGENCY DENTAL APPOINTMENT' : '📅 NEW PATIENT BOOKING'}
+        </h2>
+        <p style="color: #cbd5e1; font-size: 15px;">A patient has just booked an appointment via the 24/7 AI Receptionist.</p>
+        
+        <div style="background: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
+          <p style="margin: 6px 0;"><strong>👤 Patient Name:</strong> ${patientName}</p>
+          <p style="margin: 6px 0;"><strong>📞 Phone:</strong> <a href="tel:${patientPhone}" style="color: #38BDF8;">${patientPhone}</a></p>
+          <p style="margin: 6px 0;"><strong>✉️ Email:</strong> ${patientEmail}</p>
+          <p style="margin: 6px 0;"><strong>🗓️ Requested Slot:</strong> ${date} at ${time}</p>
+          <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageLevel.title}</p>
+          <p style="margin: 6px 0;"><strong>🩺 Symptoms / Notes:</strong> ${symptoms}</p>
+          <p style="margin: 6px 0;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
         </div>
-      `;
-      let doctorEmailRes = await this._sendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
-      logs.push({ recipient: `Doctor (${doctorEmail})`, type: "EMAIL TO DOCTOR", status: doctorEmailRes.status, detail: doctorEmailRes.detail });
-    }
+      </div>
+    `;
+
+    const doctorRes = await this._sendResendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
+    logs.push({ recipient: `Doctor (${doctorEmail})`, type: "RESEND EMAIL TO DOCTOR", status: doctorRes.status, detail: doctorRes.detail });
 
     return {
       success: true,
@@ -154,27 +112,41 @@ class NotificationService {
     };
   }
 
-  async _sendFormspreeWebhook(payload) {
+  async _sendResendEmail(to, subject, html) {
+    const apiKey = this.resendApiKey || process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return { status: "SIMULATED_SUCCESS", detail: `[Demo Mode] Email logged for ${to}` };
+    }
+
     return new Promise((resolve) => {
-      const parsedUrl = url.parse(this.formspreeUrl);
-      const postData = JSON.stringify(payload);
+      const postData = JSON.stringify({
+        from: 'Aura Dental Studio <onboarding@resend.dev>',
+        to: [to],
+        subject,
+        html
+      });
 
       const options = {
-        hostname: parsedUrl.hostname,
-        path: parsedUrl.path,
+        hostname: 'api.resend.com',
+        path: '/emails',
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData)
         }
       };
 
       const req = https.request(options, (res) => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve({ status: "SENT", detail: `Formspree webhook success (${res.statusCode})` });
-        } else {
-          resolve({ status: "FAILED", detail: `Formspree error HTTP ${res.statusCode}` });
-        }
+        let body = '';
+        res.on('data', (chunk) => body += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ status: "SENT", detail: `Resend API success: ${body}` });
+          } else {
+            resolve({ status: "FAILED", detail: `Resend API Error (${res.statusCode}): ${body}` });
+          }
+        });
       });
 
       req.on('error', (e) => {
@@ -200,24 +172,6 @@ class NotificationService {
       return { status: "DELIVERED", detail: `Twilio SID: ${message.sid}` };
     } catch (err) {
       return { status: "FAILED_FAILOVER_LOGGED", detail: err.message };
-    }
-  }
-
-  async _sendEmail(to, subject, html) {
-    if (!this.isEmailConfigured) {
-      return { status: "SIMULATED_SUCCESS", detail: `[Demo Mode] Email queued for ${to}` };
-    }
-
-    try {
-      await this.transporter.sendMail({
-        from: `"${process.env.CLINIC_NAME || 'Aura Dental Studio'}" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html
-      });
-      return { status: "SENT", detail: `Nodemailer SMTP success to ${to}` };
-    } catch (err) {
-      return { status: "FAILED", detail: err.message };
     }
   }
 }

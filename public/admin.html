@@ -132,19 +132,34 @@
 
   <div class="admin-container">
 
-    <!-- 1. FORMSPREE ZERO-CONFIG EMAIL CONNECTOR CARD -->
-    <div class="config-card" style="border-left: 4px solid var(--accent-cyan); background: #F0F9FF;">
+    <!-- 1. RESEND DUAL EMAIL API CONNECTOR CARD -->
+    <div class="config-card" style="border-left: 4px solid var(--routine-green); background: #F0FDF4;">
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
-        ⚡ Formspree Direct Email Webhook (Zero Config Required)
+        ⚡ Resend Dual Email Service (Patient Confirmation + Doctor Alert)
       </h3>
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Create a free endpoint at <a href="https://formspree.io/" target="_blank" style="font-weight: bold; color: var(--accent-cyan);">formspree.io</a>, paste your Formspree endpoint URL below (e.g. <code>https://formspree.io/f/xbjnqkyz</code>), and click Save!
+        Paste your Resend API Key from <a href="https://resend.com" target="_blank" style="font-weight: bold; color: var(--routine-green);">resend.com</a> to enable automatic dual HTML email dispatch!
       </p>
       <div style="display: flex; gap: 0.75rem; max-width: 750px;">
-        <input type="url" id="formspreeUrlInput" placeholder="Paste your Formspree Endpoint URL (https://formspree.io/f/...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
-        <button class="btn-primary" style="background: var(--brand-navy);" onclick="saveFormspreeConfig()">Connect Formspree Email</button>
+        <input type="password" id="resendKeyInput" placeholder="Paste your Resend API Key (re_123456...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <button class="btn-primary" style="background: var(--routine-green);" onclick="saveResendKey()">Connect Resend Dual Email</button>
       </div>
-      <div id="formspreeStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+      <div id="resendStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+    </div>
+
+    <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
+    <div class="config-card">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
+        🔑 Connect Live Gemini AI Engine
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Paste your Gemini API key (from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>) to enable 100% dynamic, unconstrained AI conversations.
+      </p>
+      <div style="display: flex; gap: 0.75rem; max-width: 650px;">
+        <input type="password" id="geminiKeyInput" placeholder="Paste your AI Studio Gemini API Key here (AIzaSy...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+        <button class="btn-primary" onclick="saveGeminiKey()">Save Key</button>
+      </div>
+      <div id="configStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
     </div>
 
     <!-- STATS OVERVIEW -->
@@ -344,33 +359,63 @@
       }
     }
 
-    async function saveFormspreeConfig() {
-      const formspreeUrl = document.getElementById('formspreeUrlInput').value.trim();
-      const statusDiv = document.getElementById('formspreeStatus');
+    async function saveResendKey() {
+      const resendApiKey = document.getElementById('resendKeyInput').value.trim();
+      const statusDiv = document.getElementById('resendStatus');
 
-      if (!formspreeUrl) {
+      if (!resendApiKey) {
         statusDiv.style.color = 'var(--emergency-red)';
-        statusDiv.innerText = '⚠️ Please enter your Formspree endpoint URL.';
+        statusDiv.innerText = '⚠️ Please enter your Resend API Key.';
         return;
       }
 
       try {
-        const res = await fetch('/api/admin/formspree-config', {
+        const res = await fetch('/api/admin/resend-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ formspreeUrl })
+          body: JSON.stringify({ resendApiKey })
         });
         const data = await res.json();
         if (data.success) {
           statusDiv.style.color = 'var(--routine-green)';
-          statusDiv.innerText = '✅ Formspree Email Webhook Connected!';
+          statusDiv.innerText = '✅ Resend Dual Email Connected! Live emails will deliver to Patient & Doctor!';
         } else {
           statusDiv.style.color = 'var(--emergency-red)';
-          statusDiv.innerText = '❌ Error saving Formspree URL: ' + data.error;
+          statusDiv.innerText = '❌ Error saving Resend Key: ' + data.error;
         }
       } catch (e) {
         statusDiv.style.color = 'var(--emergency-red)';
         statusDiv.innerText = '❌ Connection Error: ' + e.message;
+      }
+    }
+
+    async function saveGeminiKey() {
+      const apiKey = document.getElementById('geminiKeyInput').value.trim();
+      const statusDiv = document.getElementById('configStatus');
+      if (!apiKey) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = 'Please enter a valid Gemini API key.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusDiv.style.color = 'var(--routine-green)';
+          statusDiv.innerText = '✅ Gemini API key saved! Live AI engine is now active.';
+          document.getElementById('geminiKeyInput').value = '';
+        } else {
+          statusDiv.style.color = 'var(--emergency-red)';
+          statusDiv.innerText = '⚠️ Error saving key: ' + data.error;
+        }
+      } catch (e) {
+        statusDiv.style.color = 'var(--emergency-red)';
+        statusDiv.innerText = '⚠️ Connection error while saving key.';
       }
     }
 

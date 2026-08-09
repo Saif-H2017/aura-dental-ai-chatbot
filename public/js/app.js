@@ -14,23 +14,23 @@ function playAudioChime(type = 'response') {
 
     if (type === 'emergency') {
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
     } else {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.2); // E5
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.2);
       gain.gain.setValueAtTime(0.08, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
     }
   } catch (e) {
-    // Audio Context not allowed before user interaction
+    // Audio Context blocked until user interaction
   }
 }
 
@@ -109,7 +109,7 @@ function rotateSocialToasts() {
 
   toast.style.display = 'flex';
   toast.style.animation = 'none';
-  toast.offsetHeight; // trigger reflow
+  toast.offsetHeight;
   toast.style.animation = 'slideUp 0.4s ease';
 
   toastIdx++;
@@ -175,7 +175,7 @@ async function sendDrawerMessageToBot(text) {
     const data = await res.json();
 
     const elapsed = Date.now() - startTime;
-    const remainingDelay = Math.max(0, 4000 - elapsed);
+    const remainingDelay = Math.max(0, 3000 - elapsed);
     await new Promise(resolve => setTimeout(resolve, remainingDelay));
 
     removeTypingIndicator();
@@ -191,7 +191,9 @@ async function sendDrawerMessageToBot(text) {
       appendDrawerBubble(data.reply, 'bot');
     }
 
-    if (data.suggestSlots || data.isUrgentPrompted || text.toLowerCase().includes('book') || text.toLowerCase().includes('cleaning') || text.toLowerCase().includes('emergency')) {
+    // ONLY open booking modal if user explicitly wants to book an appointment
+    const lower = text.toLowerCase();
+    if (lower.includes('book appointment') || lower.includes('reserve a slot') || lower.includes('book a slot')) {
       document.getElementById('symptomNotes').value = text;
       setTimeout(() => {
         openBookingModal();
@@ -261,10 +263,10 @@ async function submitFinalBooking(e) {
   }
 
   showTypingIndicator();
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
   removeTypingIndicator();
 
-  appendDrawerBubble(`⏳ Securing slot for ${name}... Dispatching emails to Doctor & Patient...`, 'bot');
+  appendDrawerBubble(`⏳ Securing slot for ${name}... Dispatching booking notification...`, 'bot');
 
   try {
     const res = await fetch('/api/appointments/book', {
@@ -291,9 +293,6 @@ async function submitFinalBooking(e) {
 - **Patient**: ${name}
 - **Slot**: ${data.date} at ${data.time}
 - **Clinic**: 72 Harley Street, London W1G 7HG\n
-✉️ **Email Dispatch Status**:
-- Confirmation Email to Patient (${email}): **${data.notifications[1]?.status || 'Sent'}**
-- Booking Alert to Doctor: **${data.notifications[2]?.status || 'Sent'}**\n
 Dr. Alexander Wright and the Aura Dental team look forward to seeing you!
       `;
       appendDrawerBubble(confirmHtml, 'bot');

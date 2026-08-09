@@ -18,7 +18,6 @@ app.use(express.json());
 const publicDir = path.join(process.cwd(), 'public');
 app.use(express.static(publicDir));
 
-// Route handlers with Cache-Control headers to prevent browser caching old HTML
 app.get('/admin', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(publicDir, 'admin.html'));
@@ -107,6 +106,18 @@ app.post('/api/appointments/book', async (req, res) => {
   }
 });
 
+// API: Save Resend API Key
+app.post('/api/admin/resend-config', (req, res) => {
+  const { resendApiKey } = req.body;
+  if (resendApiKey) {
+    notificationService.setResendApiKey(resendApiKey);
+    process.env.RESEND_API_KEY = resendApiKey;
+    console.log("⚡ Resend API Key updated via Admin Portal!");
+    return res.json({ success: true, message: "Resend Dual Email API connected successfully!" });
+  }
+  res.status(400).json({ error: "Resend API key is required." });
+});
+
 // API: Mark Appointment as Completed
 app.post('/api/admin/records/complete', async (req, res) => {
   try {
@@ -129,17 +140,6 @@ app.delete('/api/admin/records/history', async (req, res) => {
   }
 });
 
-// API: Save Formspree Webhook Endpoint
-app.post('/api/admin/formspree-config', (req, res) => {
-  const { formspreeUrl } = req.body;
-  if (formspreeUrl) {
-    notificationService.setFormspreeUrl(formspreeUrl);
-    console.log("💌 Formspree Endpoint updated:", formspreeUrl);
-    return res.json({ success: true, message: "Formspree Email Webhook configured successfully!" });
-  }
-  res.status(400).json({ error: "Formspree endpoint URL is required." });
-});
-
 // API: Save Gemini API Key
 app.post('/api/admin/config', (req, res) => {
   const { apiKey } = req.body;
@@ -150,52 +150,6 @@ app.post('/api/admin/config', (req, res) => {
     return res.json({ success: true, message: "Gemini API key updated successfully." });
   }
   res.status(400).json({ error: "API key is required." });
-});
-
-// API: Save Email SMTP credentials
-app.post('/api/admin/email-config', async (req, res) => {
-  const { doctorEmail, emailPassword, testPatientEmail } = req.body;
-  if (!doctorEmail || !emailPassword) {
-    return res.status(400).json({ error: "Doctor email and App password are required." });
-  }
-
-  process.env.SMTP_USER = doctorEmail;
-  process.env.SMTP_PASS = emailPassword;
-  process.env.SURGEON_EMAIL = doctorEmail;
-
-  notificationService.setEmailConfig(doctorEmail, emailPassword);
-
-  if (testPatientEmail) {
-    try {
-      const testResult = await notificationService.sendAppointmentNotifications({
-        bookingId: "TEST-EMAIL-001",
-        patientName: "Diagnostic Test Patient",
-        patientPhone: "+447700900000",
-        patientEmail: testPatientEmail,
-        date: "2026-08-08",
-        time: "10:00 AM",
-        triageLevel: { code: "ROUTINE_CARE", title: "Routine Consultation Test" },
-        symptoms: "Live SMTP Connection Diagnostic Test",
-        isEmergency: false
-      });
-
-      const patientLog = testResult.logs.find(l => l.type.includes("EMAIL"));
-      if (patientLog && patientLog.status === "SENT") {
-        return res.json({
-          success: true,
-          message: `✅ LIVE EMAIL SUCCESS! Test email delivered to ${testPatientEmail} and ${doctorEmail}.`
-        });
-      } else {
-        return res.status(500).json({
-          error: `Email failed. Status: ${patientLog ? patientLog.detail : 'Unknown error'}`
-        });
-      }
-    } catch (err) {
-      return res.status(500).json({ error: `SMTP Transport Exception: ${err.message}` });
-    }
-  }
-
-  return res.json({ success: true, message: `Email credentials set for ${doctorEmail}` });
 });
 
 // API: Patient Records
@@ -217,8 +171,7 @@ app.get('/api/health', (req, res) => {
     surgeon: process.env.SURGEON_NAME || "Dr. Alexander Wright, BDS",
     integrations: {
       gemini: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
-      formspree: Boolean(process.env.FORMSPREE_URL),
-      emailConfigured: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
+      resend: Boolean(process.env.RESEND_API_KEY),
       googleCalendarServiceAccount: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL),
       googleSheets: Boolean(process.env.GOOGLE_SPREADSHEET_ID),
       twilioSms: Boolean(process.env.TWILIO_ACCOUNT_SID)
