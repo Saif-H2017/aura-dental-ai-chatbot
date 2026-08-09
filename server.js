@@ -18,10 +18,13 @@ app.use(express.json());
 const publicDir = path.join(process.cwd(), 'public');
 app.use(express.static(publicDir));
 
+// Route handlers with Cache-Control headers to prevent browser caching old HTML
 app.get('/admin', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 app.get('/admin.html', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
