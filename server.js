@@ -9,6 +9,7 @@ const googleCalendarService = require('./services/googleCalendarService');
 const googleSheetsService = require('./services/googleSheetsService');
 const notificationService = require('./services/notificationService');
 const { evaluateTriage } = require('./services/triageRules');
+const publicIndexHtml = require('./services/publicIndexHtml');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,52 +17,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Multi-environment robust public directory resolver
-const getPublicDir = () => {
-  const candidates = [
-    path.join(process.cwd(), 'public'),
-    path.join(__dirname, 'public'),
-    path.join(__dirname, '..', 'public')
-  ];
-
-  for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, 'index.html'))) {
-      return dir;
-    }
-  }
-  return path.join(process.cwd(), 'public');
-};
-
-const getIndexHtmlPath = () => {
-  const candidates = [
-    path.join(process.cwd(), 'public', 'index.html'),
-    path.join(process.cwd(), 'index.html'),
-    path.join(__dirname, 'public', 'index.html'),
-    path.join(__dirname, '..', 'public', 'index.html')
-  ];
-
-  for (const file of candidates) {
-    if (fs.existsSync(file)) {
-      return file;
-    }
-  }
-  return candidates[0];
-};
-
-const publicDir = getPublicDir();
+const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 
-// Direct File Stream Sender with Cache-Busting Headers
+// Direct Module Export HTML Stream Handler (Guarantees zero-delay updates on Vercel Edge)
 const serveFreshIndexHtml = (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  try {
-    const htmlPath = getIndexHtmlPath();
-    const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-    res.send(htmlContent);
-  } catch (e) {
-    res.sendFile(path.join(publicDir, 'index.html'));
-  }
+  res.send(publicIndexHtml);
 };
 
 app.get('/', serveFreshIndexHtml);
@@ -281,7 +244,7 @@ app.post('/api/admin/callback', async (req, res) => {
   }
 });
 
-// Catch-all route to serve fresh index.html with no-cache headers
+// Catch-all route to serve fresh index.html
 app.get('*', serveFreshIndexHtml);
 
 // Start Server locally

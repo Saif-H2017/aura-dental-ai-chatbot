@@ -1,0 +1,324 @@
+module.exports = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Dental Studio | Gentle, Modern Dental Care in London</title>
+  <link rel="shortcut icon" href="favicon.ico?v=2">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=2">
+  <link rel="stylesheet" href="css/styles.css?v=12">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 1. NAVIGATION BAR -->
+  <nav class="navbar">
+    <a href="#" class="brand-logo">
+      <span class="brand-icon">✨</span>
+      <div>
+        <div class="brand-name">Aura Dental Studio</div>
+        <div class="brand-tag">Marylebone • London</div>
+      </div>
+    </a>
+
+    <div class="nav-links">
+      <a href="#services" class="nav-link">Services</a>
+      <a href="#showcase" class="nav-link">Results</a>
+      <a href="#reviews" class="nav-link">Reviews (48)</a>
+      <div class="contact-phone">
+        📞 +44 20 7946 0912
+      </div>
+      <button class="btn-primary" onclick="openBookingModal()">Book Appointment</button>
+    </div>
+  </nav>
+
+  <!-- 2. HERO SECTION (SPLIT LAYOUT) -->
+  <header class="hero-section">
+    <!-- LEFT COLUMN -->
+    <div class="hero-left">
+      <div class="trust-badge">
+        <span class="stars">★★★★★</span> 4.6/5 from 48 verified patient reviews
+      </div>
+      <h1 class="hero-headline">Gentle, Modern Dental Care Designed Around Your Comfort.</h1>
+      <p class="hero-subheadline">
+        Experience stress-free dental visits with advanced technology, same-day emergency slots, and 24/7 AI scheduling.
+      </p>
+      <div class="hero-ctas">
+        <button class="btn-primary" onclick="openBookingModal()">Book Online</button>
+        <button class="btn-secondary-outline" onclick="toggleAIDrawer()">Chat with AI Assistant</button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN (HERO CARD) -->
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hero-card-header">
+          <img src="images/hero_dentist.jpg" alt="Dr. Alexander Wright" class="dentist-avatar">
+          <div class="dentist-meta">
+            <h4>Dr. Alexander Wright, BDS</h4>
+            <p>Lead Surgeon • Restorative & Emergency Specialist</p>
+          </div>
+        </div>
+
+        <div class="card-title-pill">
+          <span>📅 Next Available Appointments (PKT Real-Time)</span>
+          <div class="live-indicator">
+            <div class="live-dot"></div> Live Calendar Sync
+          </div>
+        </div>
+
+        <div class="slot-chips-grid">
+          <button class="slot-chip-btn" onclick="openBookingModal()">Loading Live Slots...</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3. EXPANDED 6-CARD TREATMENT GRID -->
+  <section class="section-container" id="services">
+    <div class="section-header">
+      <div class="section-tag">Comprehensive Care</div>
+      <h2 class="section-title">Tailored Treatments For Every Smile</h2>
+      <p class="section-subtitle">From routine checkups and Invisalign® to same-day emergency pain relief, our London clinic provides painless, state-of-the-art dental care.</p>
+    </div>
+
+    <div class="treatment-grid">
+      <!-- CARD 1 -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">🩺</div>
+          <h3>General & Airflow® Hygiene</h3>
+          <p>Comprehensive oral examinations, digital low-radiation X-rays, and painless Airflow® spa stain removal for vibrant teeth & healthy gums.</p>
+        </div>
+        <span class="treatment-badge standard">Routine Care</span>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">✨</div>
+          <h3>Cosmetic & Composite Bonding</h3>
+          <p>Transform your smile with hand-sculpted composite bonding, 6-shade laser teeth whitening, and handcrafted ultra-thin porcelain veneers.</p>
+        </div>
+        <span class="treatment-badge standard">Cosmetic</span>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">💎</div>
+          <h3>Invisalign® Clear Aligners</h3>
+          <p>Discrete, virtually invisible removable aligners to straighten teeth. Includes complimentary 3D iTero® digital smile outcome simulation.</p>
+        </div>
+        <span class="treatment-badge standard" style="background: rgba(56, 189, 248, 0.18); color: var(--brand-navy);">Orthodontics</span>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">🦷</div>
+          <h3>Dental Implants & Restorative</h3>
+          <p>Permanent single dental implants, full-arch teeth-in-a-day, and natural-looking porcelain crowns engineered for lifelong strength.</p>
+        </div>
+        <span class="treatment-badge standard">Restorative</span>
+      </div>
+
+      <!-- CARD 5 (EMERGENCY) -->
+      <div class="treatment-card" style="border-color: var(--emergency-border); background: #FFFBFB;">
+        <div>
+          <div class="treatment-icon">🚨</div>
+          <h3>Same-Day Emergency Triage</h3>
+          <p>Rapid pain relief for severe toothache, facial swelling, broken teeth, or dental trauma with daily reserved emergency slots.</p>
+        </div>
+        <span class="treatment-badge emergency">Same-Day Guarantee</span>
+      </div>
+
+      <!-- CARD 6 (NERVOUS PATIENTS) -->
+      <div class="treatment-card">
+        <div>
+          <div class="treatment-icon">🧘</div>
+          <h3>Nervous Patients & IV Sedation</h3>
+          <p>Specialized anxiety-free care featuring painless micro-needles, gentle conscious IV sedation, noise-canceling headphones, and ceiling TVs.</p>
+        </div>
+        <span class="treatment-badge standard" style="background: var(--accent-sage-light); color: var(--accent-sage);">Sedation & Calm</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. INTERACTIVE BEFORE/AFTER PATIENT SHOWCASE WITH DRAGGABLE SLIDER -->
+  <section class="section-container" id="showcase">
+    <div class="section-header">
+      <div class="section-tag">Real Patient Results</div>
+      <h2 class="section-title">Interactive Smile Transformation</h2>
+      <p class="section-subtitle">Drag the slider left or right to reveal Emily's 6-shade whitening transformation!</p>
+    </div>
+
+    <div class="showcase-card">
+      <!-- INTERACTIVE COMPARISON SLIDER CONTAINER -->
+      <div class="ba-slider-container">
+        <div class="ba-image-after" style="background-image: url('images/whitening_showcase.jpg');"></div>
+        <div class="ba-image-before" id="baBeforeImage" style="background-image: url('images/whitening_showcase.jpg'); width: 50%; filter: sepia(0.5) contrast(0.85);"></div>
+        <input type="range" min="0" max="100" value="50" class="ba-slider-input" id="baSlider" oninput="updateBeforeAfterSlider(this.value)">
+        <div class="ba-divider" id="baDivider" style="left: 50%;">
+          <div class="ba-handle">↔</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.8rem;">Laser Teeth Whitening & Alignment</h3>
+        <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.6;">
+          In just a single 60-minute session at Aura Dental Studio, Emily achieved a 6-shade brighter smile without any tooth sensitivity or discomfort.
+        </p>
+
+        <div class="quote-box">
+          "Dr. Wright and the Aura team made my teeth whitening so smooth and painless! I used to dread dentist visits, but their clinical calm environment changed everything."
+          <span class="patient-author">— Emily R., Marylebone London</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 48 REALISTIC PATIENT REVIEWS & RATINGS SECTION -->
+  <section class="section-container" id="reviews">
+    <div class="section-header">
+      <div class="section-tag">Verified Feedback</div>
+      <h2 class="section-title">48 Real Patient Reviews</h2>
+      <p class="section-subtitle">
+        Average Rating: <strong style="color: #F59E0B;">⭐ 4.6 / 5.0</strong> based on 48 verified London patient experiences.
+        <span id="reviewCountBadge" style="display:block; font-size:0.85rem; color:var(--accent-sage); margin-top:4px; font-weight:700;">Showing 6 of 48 Reviews</span>
+      </p>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="reviews-filter-bar">
+      <button class="filter-btn active" onclick="filterReviews('all', this)">All Reviews (48)</button>
+      <button class="filter-btn" onclick="filterReviews('5.0', this)">5.0 ⭐ (22)</button>
+      <button class="filter-btn" onclick="filterReviews('4.5', this)">4.5 ⭐ (13)</button>
+      <button class="filter-btn" onclick="filterReviews('4.0', this)">4.0 ⭐ (8)</button>
+      <button class="filter-btn" onclick="filterReviews('3.5', this)">3.5 ⭐ (5)</button>
+    </div>
+
+    <!-- REVIEWS GRID -->
+    <div class="reviews-grid" id="reviewsGrid">
+      <!-- Dynamically populated from reviewsData.js -->
+    </div>
+
+    <div style="text-align: center; margin-top: 2.5rem;">
+      <button class="btn-secondary-outline" id="btnLoadMoreReviews" onclick="loadMoreReviews()">Load More Reviews (+6)</button>
+    </div>
+  </section>
+
+  <!-- 6. FLOATING AI ASSISTANT WIDGET (BOTTOM RIGHT) -->
+
+  <!-- COLLAPSED FLOATING PILL BUTTON -->
+  <button class="ai-widget-collapsed" id="aiCollapsedBtn" onclick="toggleAIDrawer()">
+    <span>💬</span> Chat with AI Receptionist
+  </button>
+
+  <!-- EXPANDED DRAWER OVERLAY -->
+  <div class="ai-drawer-overlay" id="aiDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">
+        <span style="font-size: 1.2rem;">✨</span>
+        <div>
+          <div>Aura Dental 24/7 Assistant</div>
+          <div style="font-size: 0.72rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 4px;">
+            <span class="live-dot" style="width:6px; height:6px;"></span> Online • Instant Intake
+          </div>
+        </div>
+      </div>
+      <button class="btn-close-drawer" onclick="toggleAIDrawer()">✕</button>
+    </div>
+
+    <!-- DRAWER CHAT BODY -->
+    <div class="drawer-chat-body" id="drawerChatBody">
+      <div class="chat-bubble bot">
+        Hello! Welcome to Aura Dental Studio. I'm your 24/7 AI Receptionist. How can I assist you today? You can ask questions, check appointment slots, or report dental pain.
+      </div>
+    </div>
+
+    <!-- SAMPLE QUICK ACTION CHIPS -->
+    <div class="drawer-quick-chips">
+      <button class="drawer-chip" onclick="sendDrawerChip('Book Appointment')">📅 Book Appointment</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Invisalign Pricing')">💎 Invisalign Pricing</button>
+      <button class="drawer-chip" style="color: var(--emergency-red); font-weight:700;" onclick="sendDrawerChip('Emergency Tooth Pain')">🚨 Emergency Tooth Pain</button>
+      <button class="drawer-chip" style="color: var(--brand-navy); font-weight:700;" onclick="sendDrawerChip('Speak to Reception')">📞 Speak to Reception</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Do you accept Private Insurance?')">💳 Private Insurance?</button>
+      <button class="drawer-chip" onclick="sendDrawerChip('Where are you located?')">📍 Clinic Location</button>
+    </div>
+
+    <!-- INPUT FIELD WITH VOICE DICTATION (MIC) -->
+    <div class="drawer-footer">
+      <form id="drawerForm" class="drawer-input-group" onsubmit="handleDrawerChatSubmit(event)">
+        <button type="button" class="btn-mic" id="micBtn" onclick="toggleVoiceDictation()" title="Voice Dictation">🎤</button>
+        <input type="text" id="drawerInput" class="drawer-input" placeholder="Type or speak your message..." required autocomplete="off">
+        <button type="submit" class="btn-drawer-send">➔</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- BOOKING MODAL -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📅 Reserve Your Slot at Aura Dental</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Please enter your details to receive instant WhatsApp & Email confirmation.</p>
+      </div>
+      <form id="bookingForm" onsubmit="submitFinalBooking(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="patientName" placeholder="e.g. Sarah Jenkins" required>
+          </div>
+          <div class="form-group">
+            <label>UK Mobile Number (For WhatsApp/SMS Confirmation)</label>
+            <input type="tel" id="patientPhone" placeholder="+44 7700 900123" required>
+          </div>
+          <div class="form-group">
+            <label>Patient Email Address (Receives Confirmation)</label>
+            <input type="email" id="patientEmail" placeholder="patient@example.co.uk" required>
+          </div>
+          <div class="form-group">
+            <label>Select Date & Time Slot (Real-World PKT Synced)</label>
+            <select id="slotSelect" required>
+              <option value="">Loading Real-World Slots...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Reason for Visit / Symptoms</label>
+            <input type="text" id="symptomNotes" placeholder="e.g. Routine consultation / toothache">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Confirm & Dispatch Email Alerts</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER WITH SECURE SURGEON PORTAL LINK AT BOTTOM -->
+  <footer style="background: var(--brand-navy); color: #94A3B8; padding: 3rem 2rem 2rem 2rem; margin-top: 5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+    <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+      <div>
+        <div style="font-size: 1.2rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.3rem;">✨ Aura Dental Studio</div>
+        <div style="font-size: 0.85rem; color: #64748B;">72 Harley Street, Marylebone, London W1G 7HG • Phone: +44 20 7946 0912</div>
+      </div>
+      <div>
+        <a href="admin.html?v=5" target="_blank" style="color: var(--accent-cyan); font-size: 0.88rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.1); padding: 0.5rem 1rem; border-radius: var(--radius-pill); border: 1px solid rgba(56, 189, 248, 0.2);">
+          🔐 Staff & Dentist Portal Login
+        </a>
+      </div>
+    </div>
+    <div style="max-width: 1280px; margin: 2rem auto 0 auto; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; font-size: 0.78rem; color: #64748B;">
+      © 2026 Aura Dental Studio London. All Rights Reserved. NHS Emergency Triage Compliant.
+    </div>
+  </footer>
+
+  <script src="js/reviewsData.js?v=1"></script>
+  <script src="js/app.js?v=12"></script>
+</body>
+</html>`;
