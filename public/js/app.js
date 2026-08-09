@@ -38,13 +38,14 @@ function renderReviews() {
   const countBadge = document.getElementById('reviewCountBadge');
   const loadMoreBtn = document.getElementById('btnLoadMoreReviews');
   
-  if (!container || typeof REVIEWS_DATA === 'undefined') return;
+  const reviews = window.REVIEWS_DATA || (typeof REVIEWS_DATA !== 'undefined' ? REVIEWS_DATA : []);
+  if (!container || !reviews || reviews.length === 0) return;
 
-  let filtered = REVIEWS_DATA;
-  if (currentReviewFilter === '5.0') filtered = REVIEWS_DATA.filter(r => r.rating === 5.0);
-  else if (currentReviewFilter === '4.5') filtered = REVIEWS_DATA.filter(r => r.rating === 4.5);
-  else if (currentReviewFilter === '4.0') filtered = REVIEWS_DATA.filter(r => r.rating === 4.0);
-  else if (currentReviewFilter === '3.5') filtered = REVIEWS_DATA.filter(r => r.rating === 3.5);
+  let filtered = reviews;
+  if (currentReviewFilter === '5.0') filtered = reviews.filter(r => r.rating === 5.0);
+  else if (currentReviewFilter === '4.5') filtered = reviews.filter(r => r.rating === 4.5);
+  else if (currentReviewFilter === '4.0') filtered = reviews.filter(r => r.rating === 4.0);
+  else if (currentReviewFilter === '3.5') filtered = reviews.filter(r => r.rating === 3.5);
 
   if (countBadge) countBadge.innerText = `Showing ${Math.min(currentReviewLimit, filtered.length)} of ${filtered.length} Reviews`;
 
@@ -76,7 +77,7 @@ function renderReviews() {
       loadMoreBtn.style.display = 'none';
     } else {
       loadMoreBtn.style.display = 'inline-block';
-      loadMoreBtn.innerText = `Load More Reviews (+6 remaining)`;
+      loadMoreBtn.innerText = `Load More Reviews (+${filtered.length - currentReviewLimit} remaining)`;
     }
   }
 }
@@ -109,6 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadLiveRealWorldSlots();
   renderReviews();
 });
+
+window.addEventListener('load', () => {
+  renderReviews();
+});
+
+// Immediate execution fallback
+setTimeout(renderReviews, 200);
 
 // Web Audio API Synthesized Chimes
 function playAudioChime(type = 'response') {

@@ -1,4 +1,4 @@
-const REVIEWS_DATA = [
+window.REVIEWS_DATA = [
   {
     id: 1,
     name: "Charlotte M.",
@@ -432,7 +432,3 @@ const REVIEWS_DATA = [
     comment: "Top notch dental team on Harley Street!"
   }
 ];
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = REVIEWS_DATA;
-}
