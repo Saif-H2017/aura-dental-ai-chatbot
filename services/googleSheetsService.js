@@ -10,7 +10,7 @@ const DEMO_PATIENT_RECORDS = [
     date: "2026-08-08",
     time: "11:00 AM",
     doctorAlertSent: "YES (Priority SMS & WhatsApp)",
-    status: "CONFIRMED"
+    status: "ACTIVE"
   },
   {
     timestamp: "2026-08-07T15:05:12Z",
@@ -23,7 +23,7 @@ const DEMO_PATIENT_RECORDS = [
     date: "2026-08-08",
     time: "02:15 PM",
     doctorAlertSent: "YES (Standard Notification)",
-    status: "CONFIRMED"
+    status: "ACTIVE"
   },
   {
     timestamp: "2026-08-07T16:11:45Z",
@@ -36,7 +36,7 @@ const DEMO_PATIENT_RECORDS = [
     date: "2026-08-08",
     time: "03:30 PM",
     doctorAlertSent: "YES (Priority SMS & WhatsApp)",
-    status: "CONFIRMED"
+    status: "ACTIVE"
   },
   {
     timestamp: "2026-08-07T17:40:02Z",
@@ -49,7 +49,7 @@ const DEMO_PATIENT_RECORDS = [
     date: "2026-08-10",
     time: "10:00 AM",
     doctorAlertSent: "YES (Standard Notification)",
-    status: "CONFIRMED"
+    status: "ACTIVE"
   },
   {
     timestamp: "2026-08-07T18:02:30Z",
@@ -62,7 +62,7 @@ const DEMO_PATIENT_RECORDS = [
     date: "2026-08-10",
     time: "11:30 AM",
     doctorAlertSent: "YES (Standard Notification)",
-    status: "CONFIRMED"
+    status: "ACTIVE"
   }
 ];
 
@@ -103,7 +103,7 @@ class GoogleSheetsService {
       date: bookingData.date,
       time: bookingData.time,
       doctorAlertSent: bookingData.isEmergency ? "YES (PRIORITY SMS)" : "YES (STANDARD)",
-      status: "CONFIRMED"
+      status: "ACTIVE"
     };
 
     DEMO_PATIENT_RECORDS.unshift(record);
@@ -143,6 +143,27 @@ class GoogleSheetsService {
     }
   }
 
+  async completeAppointment(bookingId) {
+    const item = DEMO_PATIENT_RECORDS.find(r => r.bookingId === bookingId);
+    if (item) {
+      item.status = "COMPLETED";
+      item.completedAt = new Date().toISOString();
+      return { success: true, record: item };
+    }
+    return { success: false, error: "Record not found" };
+  }
+
+  async clearHistory() {
+    let count = 0;
+    for (let i = DEMO_PATIENT_RECORDS.length - 1; i >= 0; i--) {
+      if (DEMO_PATIENT_RECORDS[i].status === "COMPLETED") {
+        DEMO_PATIENT_RECORDS.splice(i, 1);
+        count++;
+      }
+    }
+    return { success: true, deletedCount: count };
+  }
+
   async getAllRecords() {
     if (!this.isProduction) {
       return DEMO_PATIENT_RECORDS;
@@ -166,7 +187,7 @@ class GoogleSheetsService {
         date: r[7],
         time: r[8],
         doctorAlertSent: r[9],
-        status: r[10]
+        status: r[10] || "ACTIVE"
       }));
     } catch (error) {
       console.error("Failed to read Google Sheets:", error.message);

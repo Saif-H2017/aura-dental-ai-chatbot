@@ -104,6 +104,28 @@ app.post('/api/appointments/book', async (req, res) => {
   }
 });
 
+// API: Mark Appointment as Completed
+app.post('/api/admin/records/complete', async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    if (!bookingId) return res.status(400).json({ error: "Booking ID is required." });
+    const result = await googleSheetsService.completeAppointment(bookingId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to mark appointment as completed" });
+  }
+});
+
+// API: Clear Completed History
+app.delete('/api/admin/records/history', async (req, res) => {
+  try {
+    const result = await googleSheetsService.clearHistory();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to clear appointment history" });
+  }
+});
+
 // API: Save Formspree Webhook Endpoint
 app.post('/api/admin/formspree-config', (req, res) => {
   const { formspreeUrl } = req.body;
