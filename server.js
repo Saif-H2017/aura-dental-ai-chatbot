@@ -39,6 +39,25 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
+// API: Surgeon Login Authentication
+app.post('/api/admin/login', (req, res) => {
+  const { email, password } = req.body;
+  const AUTHORIZED_EMAIL = process.env.SURGEON_LOGIN_EMAIL || 'saif.247ozx@gmail.com';
+  const AUTHORIZED_PASS = process.env.SURGEON_LOGIN_PASS || 'SaifAsif_678';
+
+  if (email && email.toLowerCase().trim() === AUTHORIZED_EMAIL.toLowerCase() && password === AUTHORIZED_PASS) {
+    console.log(`🔐 Surgeon Login Granted for ${email}`);
+    return res.json({
+      success: true,
+      token: "AUTH_SURGEON_GRANTED_SESSION_TOKEN_678",
+      user: { name: "Dr. Alexander Wright / Muhammad Saif", email: AUTHORIZED_EMAIL }
+    });
+  }
+
+  console.warn(`🔒 Failed login attempt for email: ${email}`);
+  return res.status(401).json({ success: false, error: "Invalid surgeon email or password." });
+});
+
 // API: Process Chat Message
 app.post('/api/chat', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-<!-- VERSION 3.0 RESEND DUAL EMAIL READY -->
+<!-- VERSION 4.0 SECURE SURGEON PORTAL -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -114,138 +114,252 @@
       cursor: pointer;
       accent-color: var(--routine-green);
     }
+    
+    /* LOGIN MODAL OVERLAY */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+    }
+    .login-card {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 440px;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    .login-header h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--brand-navy);
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <a href="#" class="brand-logo">
-      <span class="brand-icon">👨‍⚕️</span>
-      <div>
-        <div class="brand-name">SURGEON PORTAL & TRIAGE</div>
-        <div class="brand-tag">Dr. Alexander Wright • Aura Dental Studio</div>
+  <!-- SECURE LOGIN MODAL -->
+  <div class="login-overlay" id="loginModal">
+    <div class="login-card">
+      <div class="login-header">
+        <div style="font-size: 2.8rem;">🔐</div>
+        <h2>Surgeon Portal Access</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Restricted Clinical Triage & Patient Logs System</p>
       </div>
-    </a>
-    <div class="nav-links">
-      <a href="Aura_Dental_Patient_Records.csv" download class="btn-primary" style="background: var(--routine-green);">📥 Export CSV</a>
-      <button class="btn-primary" onclick="fetchAdminRecords()">🔄 Refresh Logs</button>
-      <a href="index.html" class="btn-secondary-outline">🌐 Dental Website</a>
+
+      <form onsubmit="handleSurgeonLogin(event)">
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label style="font-weight: 700; font-size: 0.88rem; color: var(--brand-navy);">Authorized Email</label>
+          <input type="email" id="loginEmail" placeholder="saif.247ozx@gmail.com" required style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label style="font-weight: 700; font-size: 0.88rem; color: var(--brand-navy);">Surgeon Access Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••••••" required style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
+        </div>
+
+        <div id="loginError" style="color: var(--emergency-red); font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; display: none;"></div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem; background: var(--brand-navy);">
+          🔐 Access Triage & Bookings
+        </button>
+      </form>
     </div>
-  </nav>
+  </div>
 
-  <div class="admin-container">
+  <!-- MAIN ADMIN DASHBOARD CONTENT (LOCKED BY DEFAULT) -->
+  <div id="adminAppContent" style="display: none;">
 
-    <!-- 1. RESEND DUAL EMAIL API CONNECTOR CARD -->
-    <div class="config-card" style="border-left: 4px solid var(--routine-green); background: #F0FDF4;">
-      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
-        ⚡ Resend Dual Email Service (Patient Confirmation + Doctor Alert)
-      </h3>
-      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Paste your Resend API Key from <a href="https://resend.com" target="_blank" style="font-weight: bold; color: var(--routine-green);">resend.com</a> to enable automatic dual HTML email dispatch!
-      </p>
-      <div style="display: flex; gap: 0.75rem; max-width: 750px;">
-        <input type="password" id="resendKeyInput" placeholder="Paste your Resend API Key (re_123456...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
-        <button class="btn-primary" style="background: var(--routine-green);" onclick="saveResendKey()">Connect Resend Dual Email</button>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <a href="#" class="brand-logo">
+        <span class="brand-icon">👨‍⚕️</span>
+        <div>
+          <div class="brand-name">SURGEON PORTAL & TRIAGE</div>
+          <div class="brand-tag">Dr. Alexander Wright • Aura Dental Studio</div>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a href="Aura_Dental_Patient_Records.csv" download class="btn-primary" style="background: var(--routine-green);">📥 Export CSV</a>
+        <button class="btn-primary" onclick="fetchAdminRecords()">🔄 Refresh Logs</button>
+        <button class="btn-secondary-outline" onclick="surgeonLogout()" style="color: var(--emergency-red); border-color: var(--emergency-red);">🔒 Log Out</button>
       </div>
-      <div id="resendStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+    </nav>
+
+    <div class="admin-container">
+
+      <!-- 1. RESEND DUAL EMAIL API CONNECTOR CARD -->
+      <div class="config-card" style="border-left: 4px solid var(--routine-green); background: #F0FDF4;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.4rem;">
+          ⚡ Resend Dual Email Service (Patient Confirmation + Doctor Alert)
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Paste your Resend API Key from <a href="https://resend.com" target="_blank" style="font-weight: bold; color: var(--routine-green);">resend.com</a> to enable automatic dual HTML email dispatch!
+        </p>
+        <div style="display: flex; gap: 0.75rem; max-width: 750px;">
+          <input type="password" id="resendKeyInput" placeholder="Paste your Resend API Key (re_123456...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+          <button class="btn-primary" style="background: var(--routine-green);" onclick="saveResendKey()">Connect Resend Dual Email</button>
+        </div>
+        <div id="resendStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
+      </div>
+
+      <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
+      <div class="config-card">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
+          🔑 Connect Live Gemini AI Engine
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Paste your Gemini API key (from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>) to enable 100% dynamic, unconstrained AI conversations.
+        </p>
+        <div style="display: flex; gap: 0.75rem; max-width: 650px;">
+          <input type="password" id="geminiKeyInput" placeholder="Paste your AI Studio Gemini API Key here (AIzaSy...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+          <button class="btn-primary" onclick="saveGeminiKey()">Save Key</button>
+        </div>
+        <div id="configStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
+      </div>
+
+      <!-- STATS OVERVIEW -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Active Pending Appointments</div>
+          <div class="stat-val" id="activeCount">5</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Completed History</div>
+          <div class="stat-val" style="color: var(--routine-green);" id="completedCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Urgent Triage Alerts</div>
+          <div class="stat-val" style="color: var(--emergency-red);" id="urgentCount">2</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Google Calendar Sync</div>
+          <div class="stat-val" style="color: var(--routine-green); font-size: 1.2rem; margin-top: 0.8rem;">🟢 Connected</div>
+        </div>
+      </div>
+
+      <!-- TAB NAVIGATION BAR -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabActiveBtn" onclick="switchTab('active')">📅 Active Pending Bookings (<span id="tabActiveNum">5</span>)</button>
+        <button class="tab-btn" id="tabHistoryBtn" onclick="switchTab('history')">📜 Completed History (<span id="tabHistoryNum">0</span>)</button>
+      </div>
+
+      <!-- ACTIVE BOOKINGS SECTION -->
+      <div id="activeSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800;">📋 Pending Patient Appointments (Tick checkbox when appointment takes place)</h2>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;">Done?</th>
+              <th>Ref ID</th>
+              <th>Patient Name</th>
+              <th>Phone / Contact</th>
+              <th>Date & Time</th>
+              <th>Triage Severity</th>
+              <th>Symptoms & Pain Notes</th>
+            </tr>
+          </thead>
+          <tbody id="activeTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- COMPLETED HISTORY SECTION -->
+      <div id="historySection" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800;">📜 Completed Patient Appointment History</h2>
+          <button class="btn-primary" style="background: var(--emergency-red);" onclick="clearHistoryRecords()">🗑️ Delete All History</button>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ref ID</th>
+              <th>Patient Name</th>
+              <th>Phone / Contact</th>
+              <th>Date & Time</th>
+              <th>Triage Category</th>
+              <th>Symptoms</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
     </div>
-
-    <!-- 2. GEMINI LIVE API KEY SETUP CARD -->
-    <div class="config-card">
-      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--brand-navy); margin-bottom: 0.5rem;">
-        🔑 Connect Live Gemini AI Engine
-      </h3>
-      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Paste your Gemini API key (from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>) to enable 100% dynamic, unconstrained AI conversations.
-      </p>
-      <div style="display: flex; gap: 0.75rem; max-width: 650px;">
-        <input type="password" id="geminiKeyInput" placeholder="Paste your AI Studio Gemini API Key here (AIzaSy...)" style="flex:1; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
-        <button class="btn-primary" onclick="saveGeminiKey()">Save Key</button>
-      </div>
-      <div id="configStatus" style="font-size: 0.82rem; margin-top: 0.6rem; font-weight: 600;"></div>
-    </div>
-
-    <!-- STATS OVERVIEW -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Active Pending Appointments</div>
-        <div class="stat-val" id="activeCount">5</div>
-      </div>
-      <div class="stat-card">
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Completed History</div>
-        <div class="stat-val" style="color: var(--routine-green);" id="completedCount">0</div>
-      </div>
-      <div class="stat-card">
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Urgent Triage Alerts</div>
-        <div class="stat-val" style="color: var(--emergency-red);" id="urgentCount">2</div>
-      </div>
-      <div class="stat-card">
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Google Calendar Sync</div>
-        <div class="stat-val" style="color: var(--routine-green); font-size: 1.2rem; margin-top: 0.8rem;">🟢 Connected</div>
-      </div>
-    </div>
-
-    <!-- TAB NAVIGATION BAR -->
-    <div class="tab-bar">
-      <button class="tab-btn active" id="tabActiveBtn" onclick="switchTab('active')">📅 Active Pending Bookings (<span id="tabActiveNum">5</span>)</button>
-      <button class="tab-btn" id="tabHistoryBtn" onclick="switchTab('history')">📜 Completed History (<span id="tabHistoryNum">0</span>)</button>
-    </div>
-
-    <!-- ACTIVE BOOKINGS SECTION -->
-    <div id="activeSection">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800;">📋 Pending Patient Appointments (Tick checkbox when appointment takes place)</h2>
-      </div>
-
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 40px; text-align: center;">Done?</th>
-            <th>Ref ID</th>
-            <th>Patient Name</th>
-            <th>Phone / Contact</th>
-            <th>Date & Time</th>
-            <th>Triage Severity</th>
-            <th>Symptoms & Pain Notes</th>
-          </tr>
-        </thead>
-        <tbody id="activeTableBody">
-          <!-- Populated dynamically -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- COMPLETED HISTORY SECTION -->
-    <div id="historySection" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800;">📜 Completed Patient Appointment History</h2>
-        <button class="btn-primary" style="background: var(--emergency-red);" onclick="clearHistoryRecords()">🗑️ Delete All History</button>
-      </div>
-
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Ref ID</th>
-            <th>Patient Name</th>
-            <th>Phone / Contact</th>
-            <th>Date & Time</th>
-            <th>Triage Category</th>
-            <th>Symptoms</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="historyTableBody">
-          <!-- Populated dynamically -->
-        </tbody>
-      </table>
-    </div>
-
   </div>
 
   <script>
     let allRecords = [];
     let currentTab = 'active';
+
+    // Check Authentication on Page Load
+    function checkAuthStatus() {
+      const token = sessionStorage.getItem('aura_surgeon_token');
+      if (token) {
+        document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('adminAppContent').style.display = 'block';
+        fetchAdminRecords();
+      } else {
+        document.getElementById('loginModal').style.display = 'flex';
+        document.getElementById('adminAppContent').style.display = 'none';
+      }
+    }
+
+    async function handleSurgeonLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const errorDiv = document.getElementById('loginError');
+
+      errorDiv.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          sessionStorage.setItem('aura_surgeon_token', data.token);
+          checkAuthStatus();
+        } else {
+          errorDiv.innerText = `❌ ${data.error || 'Invalid credentials'}`;
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.innerText = `❌ Connection error: ${err.message}`;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function surgeonLogout() {
+      sessionStorage.removeItem('aura_surgeon_token');
+      checkAuthStatus();
+    }
 
     function switchTab(tab) {
       currentTab = tab;
@@ -423,7 +537,7 @@
       }
     }
 
-    fetchAdminRecords();
+    checkAuthStatus();
   </script>
 </body>
 </html>
