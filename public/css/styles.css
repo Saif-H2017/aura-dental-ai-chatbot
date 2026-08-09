@@ -148,7 +148,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* SOCIAL PROOF TOAST */
+/* SOCIAL PROOF TOAST (Hidden by default, pops up every 35s for 5s) */
 .social-proof-toast {
   position: fixed;
   bottom: 2rem;
@@ -158,12 +158,11 @@ body {
   border-radius: var(--radius-lg);
   padding: 0.8rem 1.2rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  display: flex;
+  display: none;
   align-items: center;
   gap: 12px;
   font-size: 0.85rem;
   z-index: 900;
-  animation: slideUp 0.4s ease;
 }
 
 .toast-dot {
@@ -176,6 +175,11 @@ body {
 @keyframes slideUp {
   from { transform: translateY(30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(30px); opacity: 0; }
 }
 
 /* HERO SECTION */

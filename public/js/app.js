@@ -206,7 +206,7 @@ function toggleVoiceDictation() {
   recognition.start();
 }
 
-// 3. Social Proof Toasts Rotator
+// 3. SOCIAL PROOF TOASTS ROTATOR (POPS UP FOR 5 SECONDS EVERY 35 SECONDS)
 const TOAST_DATA = [
   { name: "Sarah J. from Marylebone", action: "Just booked a teeth whitening slot (3 mins ago)" },
   { name: "Marcus V. from Mayfair", action: "Booked a routine airflow cleaning (12 mins ago)" },
@@ -215,7 +215,7 @@ const TOAST_DATA = [
 ];
 
 let toastIdx = 0;
-function rotateSocialToasts() {
+function showSocialToast() {
   const toast = document.getElementById('socialToast');
   if (!toast) return;
 
@@ -223,15 +223,26 @@ function rotateSocialToasts() {
   document.getElementById('toastName').innerText = item.name;
   document.getElementById('toastAction').innerText = item.action;
 
+  // Slide up and make visible
   toast.style.display = 'flex';
-  toast.style.animation = 'none';
-  toast.offsetHeight;
-  toast.style.animation = 'slideUp 0.4s ease';
+  toast.style.animation = 'slideUp 0.4s ease forwards';
 
   toastIdx++;
-  setTimeout(rotateSocialToasts, 14000);
+
+  // Auto-dismiss after EXACTLY 5 seconds
+  setTimeout(() => {
+    toast.style.animation = 'slideDown 0.4s ease forwards';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 400);
+  }, 5000);
 }
-setTimeout(rotateSocialToasts, 4000);
+
+// First popup after 35 seconds, then repeats every 35 seconds
+setTimeout(() => {
+  showSocialToast();
+  setInterval(showSocialToast, 35000);
+}, 35000);
 
 // Toggle Floating AI Drawer Overlay
 function toggleAIDrawer() {
