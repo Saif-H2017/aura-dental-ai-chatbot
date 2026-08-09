@@ -1,4 +1,4 @@
-// DYNAMIC REAL-TIME CLOCK & SLOT ENGINE (Explicit PKT UTC+5 Offset)
+// STRICT REAL-WORLD CLOCK ENGINE (Past-Time Filtered Synced to PKT UTC+5)
 
 function getLiveRealWorldSlots() {
   const now = new Date();
@@ -6,6 +6,9 @@ function getLiveRealWorldSlots() {
   // Force Pakistan Time (UTC + 5 Hours)
   const pktMs = now.getTime() + (5 * 60 * 60 * 1000);
   const pktNow = new Date(pktMs);
+
+  const currentHour = pktNow.getUTCHours(); // e.g. 21 (9 PM)
+  const currentMin = pktNow.getUTCMinutes();
 
   // Helper to extract YYYY-MM-DD in PKT
   const formatIsoDate = (d) => {
@@ -22,32 +25,32 @@ function getLiveRealWorldSlots() {
     return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
   };
 
+  const allPossibleSlots = [];
+
+  // Determine if Today still has upcoming slots (e.g. 7:30 PM slot = hour 19.5)
+  // If current hour is >= 19 (7 PM), today's 7:30 PM slot has passed or is too close!
   const todayIso = formatIsoDate(pktNow);
   const todayLabel = formatReadableDay(pktNow);
 
-  const tomorrowObj = new Date(pktMs + (24 * 60 * 60 * 1000));
-  const tomorrowIso = formatIsoDate(tomorrowObj);
-  const tomorrowLabel = formatReadableDay(tomorrowObj);
-
-  const dayAfterObj = new Date(pktMs + (2 * 24 * 60 * 60 * 1000));
-  const dayAfterIso = formatIsoDate(dayAfterObj);
-  const dayAfterLabel = formatReadableDay(dayAfterObj);
-
-  const day3Obj = new Date(pktMs + (3 * 24 * 60 * 60 * 1000));
-  const day3Iso = formatIsoDate(day3Obj);
-  const day3Label = formatReadableDay(day3Obj);
-
-  return [
-    {
-      id: `slot-pkt-1`,
+  if (currentHour < 18) {
+    allPossibleSlots.push({
+      id: `slot-pkt-today`,
       date: todayIso,
       time: "07:30 PM",
       display: `Today (${todayLabel}) at 7:30 PM PKT`,
       shortLabel: `Today (${todayLabel}) at 7:30 PM`,
       urgentOnly: false
-    },
+    });
+  }
+
+  // Tomorrow (+1 day)
+  const tomorrowObj = new Date(pktMs + (24 * 60 * 60 * 1000));
+  const tomorrowIso = formatIsoDate(tomorrowObj);
+  const tomorrowLabel = formatReadableDay(tomorrowObj);
+
+  allPossibleSlots.push(
     {
-      id: `slot-pkt-2`,
+      id: `slot-pkt-tom-1`,
       date: tomorrowIso,
       time: "10:00 AM",
       display: `Tomorrow (${tomorrowLabel}) at 10:00 AM PKT`,
@@ -55,7 +58,7 @@ function getLiveRealWorldSlots() {
       urgentOnly: false
     },
     {
-      id: `slot-pkt-3`,
+      id: `slot-pkt-tom-2`,
       date: tomorrowIso,
       time: "02:15 PM",
       display: `Tomorrow (${tomorrowLabel}) at 2:15 PM PKT`,
@@ -63,7 +66,23 @@ function getLiveRealWorldSlots() {
       urgentOnly: false
     },
     {
-      id: `slot-pkt-4`,
+      id: `slot-pkt-tom-3`,
+      date: tomorrowIso,
+      time: "04:30 PM",
+      display: `Tomorrow (${tomorrowLabel}) at 4:30 PM PKT`,
+      shortLabel: `Tomorrow (${tomorrowLabel}) at 4:30 PM`,
+      urgentOnly: false
+    }
+  );
+
+  // Day After Tomorrow (+2 days)
+  const dayAfterObj = new Date(pktMs + (2 * 24 * 60 * 60 * 1000));
+  const dayAfterIso = formatIsoDate(dayAfterObj);
+  const dayAfterLabel = formatReadableDay(dayAfterObj);
+
+  allPossibleSlots.push(
+    {
+      id: `slot-pkt-day2-1`,
       date: dayAfterIso,
       time: "11:30 AM",
       display: `${dayAfterLabel} at 11:30 AM PKT`,
@@ -71,14 +90,30 @@ function getLiveRealWorldSlots() {
       urgentOnly: false
     },
     {
-      id: `slot-pkt-5`,
-      date: day3Iso,
+      id: `slot-pkt-day2-2`,
+      date: dayAfterIso,
       time: "03:30 PM",
-      display: `${day3Label} at 3:30 PM PKT`,
-      shortLabel: `${day3Label} at 3:30 PM`,
+      display: `${dayAfterLabel} at 3:30 PM PKT`,
+      shortLabel: `${dayAfterLabel} at 3:30 PM`,
       urgentOnly: false
     }
-  ];
+  );
+
+  // Day 3 (+3 days)
+  const day3Obj = new Date(pktMs + (3 * 24 * 60 * 60 * 1000));
+  const day3Iso = formatIsoDate(day3Obj);
+  const day3Label = formatReadableDay(day3Obj);
+
+  allPossibleSlots.push({
+    id: `slot-pkt-day3-1`,
+    date: day3Iso,
+    time: "01:00 PM",
+    display: `${day3Label} at 1:00 PM PKT`,
+    shortLabel: `${day3Label} at 1:00 PM`,
+    urgentOnly: false
+  });
+
+  return allPossibleSlots.slice(0, 5);
 }
 
 class GoogleCalendarService {
@@ -117,7 +152,7 @@ class GoogleCalendarService {
         this.isProduction = false;
       }
     } else {
-      console.log("ℹ️ Google Calendar running in Real-World PKT Time Sync mode.");
+      console.log("ℹ️ Google Calendar running in Strict Past-Time Filtered PKT Mode.");
     }
   }
 
