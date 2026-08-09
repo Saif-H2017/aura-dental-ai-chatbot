@@ -1,14 +1,27 @@
-<!-- VERSION 4.0 SECURE SURGEON PORTAL -->
+<!-- VERSION 4.1 FAILSAFE PASSWORD LOCKED ADMIN PORTAL -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dr. Wright's Surgeon Portal | Aura Dental Studio London</title>
-  <link rel="shortcut icon" href="favicon.ico?v=2">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
-  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=2">
-  <link rel="stylesheet" href="css/styles.css?v=3">
+  <title>Dr. Wright's Surgeon Portal | Security Login</title>
+  <link rel="shortcut icon" href="favicon.ico?v=3">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
+  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=3">
+  <link rel="stylesheet" href="css/styles.css?v=4">
+  
+  <script>
+    // IMMEDIATE FAILSAFE AUTHENTICATION GUARD IN HEAD BEFORE DOM PARSING
+    (function() {
+      const token = sessionStorage.getItem('aura_surgeon_token');
+      if (!token) {
+        document.write('<style>#adminAppContent { display: none !important; } #loginModal { display: flex !important; }</style>');
+      } else {
+        document.write('<style>#adminAppContent { display: block !important; } #loginModal { display: none !important; }</style>');
+      }
+    })();
+  </script>
+
   <style>
     .admin-container {
       max-width: 1200px;
@@ -122,8 +135,8 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -135,7 +148,7 @@
       max-width: 440px;
       border-radius: var(--radius-xl);
       padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .login-header {
@@ -317,13 +330,16 @@
     // Check Authentication on Page Load
     function checkAuthStatus() {
       const token = sessionStorage.getItem('aura_surgeon_token');
+      const loginModal = document.getElementById('loginModal');
+      const appContent = document.getElementById('adminAppContent');
+
       if (token) {
-        document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('adminAppContent').style.display = 'block';
+        loginModal.style.setProperty('display', 'none', 'important');
+        appContent.style.setProperty('display', 'block', 'important');
         fetchAdminRecords();
       } else {
-        document.getElementById('loginModal').style.display = 'flex';
-        document.getElementById('adminAppContent').style.display = 'none';
+        loginModal.style.setProperty('display', 'flex', 'important');
+        appContent.style.setProperty('display', 'none', 'important');
       }
     }
 
