@@ -29,6 +29,15 @@ async function loadLiveRealWorldSlots() {
   }
 }
 
+// Haptic entrance pulse trigger after 5 seconds
+setTimeout(() => {
+  const widgetBtn = document.getElementById('aiCollapsedBtn');
+  if (widgetBtn && !document.getElementById('aiDrawer').classList.contains('active')) {
+    widgetBtn.classList.add('haptic-pulse');
+    setTimeout(() => widgetBtn.classList.remove('haptic-pulse'), 4000);
+  }
+}, 5000);
+
 document.addEventListener('DOMContentLoaded', loadLiveRealWorldSlots);
 
 // Web Audio API Synthesized Chimes
@@ -186,6 +195,7 @@ function sendDrawerChip(text) {
   sendDrawerMessageToBot(text);
 }
 
+// High-Speed Instant Response Sender (Optimized Latency)
 async function sendDrawerMessageToBot(text) {
   showTypingIndicator();
   const startTime = Date.now();
@@ -203,8 +213,9 @@ async function sendDrawerMessageToBot(text) {
 
     const data = await res.json();
 
+    // Fast sub-second latency delay (400ms for natural feel)
     const elapsed = Date.now() - startTime;
-    const remainingDelay = Math.max(0, 2000 - elapsed);
+    const remainingDelay = Math.max(0, 400 - elapsed);
     await new Promise(resolve => setTimeout(resolve, remainingDelay));
 
     removeTypingIndicator();
@@ -220,8 +231,8 @@ async function sendDrawerMessageToBot(text) {
       appendDrawerBubble(data.reply, 'bot');
     }
 
-    // IF USER SELECTED A SLOT (Option 1, 2, 3, 4, 5), OPEN BOOKING MODAL TO FINALIZE DETAILS
-    if (data.promptForDetails || data.selectedSlot) {
+    // IF USER SELECTED A SLOT OR REQUESTED CALLBACK, OPEN MODAL
+    if (data.promptForDetails || data.selectedSlot || data.isCallbackPrompted) {
       if (data.slotDate && data.slotTime) {
         const select = document.getElementById('slotSelect');
         const matchingOpt = Array.from(select.options).find(opt => opt.value.includes(data.slotDate));
@@ -229,7 +240,7 @@ async function sendDrawerMessageToBot(text) {
       }
       setTimeout(() => {
         openBookingModal();
-      }, 1500);
+      }, 1000);
     }
 
   } catch (err) {
@@ -301,7 +312,7 @@ async function submitFinalBooking(e) {
   }
 
   showTypingIndicator();
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 800));
   removeTypingIndicator();
 
   appendDrawerBubble(`⏳ Securing slot for ${name}... Dispatching booking notification...`, 'bot');
