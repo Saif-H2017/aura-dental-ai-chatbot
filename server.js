@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const geminiService = require('./services/geminiService');
 const googleCalendarService = require('./services/googleCalendarService');
@@ -15,18 +16,28 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const publicDir = path.join(__dirname, 'public');
+// Multi-environment robust public directory resolver (Handles both local & Vercel serverless /api/ lambda execution)
+const publicDir = fs.existsSync(path.join(__dirname, 'public'))
+  ? path.join(__dirname, 'public')
+  : path.join(__dirname, '..', 'public');
+
 app.use(express.static(publicDir));
 
 // Explicit route for root & index.html with no-cache headers to bust Vercel Edge CDN cache
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.sendFile(path.join(publicDir, 'index.html'));
+  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
+    ? path.join(publicDir, 'index.html')
+    : path.join(process.cwd(), 'index.html');
+  res.sendFile(targetFile);
 });
 
 app.get('/index.html', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.sendFile(path.join(publicDir, 'index.html'));
+  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
+    ? path.join(publicDir, 'index.html')
+    : path.join(process.cwd(), 'index.html');
+  res.sendFile(targetFile);
 });
 
 // Explicit favicon route handlers
@@ -246,7 +257,10 @@ app.post('/api/admin/callback', async (req, res) => {
 // Catch-all route to serve index.html with no-cache headers
 app.get('*', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.sendFile(path.join(publicDir, 'index.html'));
+  const targetFile = fs.existsSync(path.join(publicDir, 'index.html'))
+    ? path.join(publicDir, 'index.html')
+    : path.join(process.cwd(), 'index.html');
+  res.sendFile(targetFile);
 });
 
 // Start Server locally
