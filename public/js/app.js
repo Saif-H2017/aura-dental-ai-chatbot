@@ -2,7 +2,7 @@ let chatHistory = [];
 let currentBookingDraft = {};
 let recognition = null;
 
-// Web Audio API Synthesized Chimes (Zero external audio dependency)
+// Web Audio API Synthesized Chimes
 function playAudioChime(type = 'response') {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -175,7 +175,7 @@ async function sendDrawerMessageToBot(text) {
     const data = await res.json();
 
     const elapsed = Date.now() - startTime;
-    const remainingDelay = Math.max(0, 3000 - elapsed);
+    const remainingDelay = Math.max(0, 2000 - elapsed);
     await new Promise(resolve => setTimeout(resolve, remainingDelay));
 
     removeTypingIndicator();
@@ -191,10 +191,13 @@ async function sendDrawerMessageToBot(text) {
       appendDrawerBubble(data.reply, 'bot');
     }
 
-    // ONLY open booking modal if user explicitly wants to book an appointment
-    const lower = text.toLowerCase();
-    if (lower.includes('book appointment') || lower.includes('reserve a slot') || lower.includes('book a slot')) {
-      document.getElementById('symptomNotes').value = text;
+    // IF USER SELECTED A SLOT (Option 1, 2, 3, 4, 2:15, 10:00, 3:30), OPEN BOOKING MODAL TO FINALIZE DETAILS
+    if (data.promptForDetails || data.selectedSlot) {
+      if (data.selectedSlot) {
+        const select = document.getElementById('slotSelect');
+        const matchingOpt = Array.from(select.options).find(opt => opt.text.includes(data.selectedSlot) || data.selectedSlot.includes(opt.text.split(' ')[0]));
+        if (matchingOpt) select.value = matchingOpt.value;
+      }
       setTimeout(() => {
         openBookingModal();
       }, 1500);
