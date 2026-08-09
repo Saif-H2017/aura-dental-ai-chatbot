@@ -1,9 +1,8 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.js",
-      "use": "@vercel/node"
+      "source": "/admin",
+      "destination": "/admin.html"
     }
   ],
   "headers": [
@@ -15,12 +14,6 @@
           "value": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
         }
       ]
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.js"
     }
   ]
 }
