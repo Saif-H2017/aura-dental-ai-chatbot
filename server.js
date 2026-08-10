@@ -176,27 +176,35 @@ app.post('/api/appointments/book', async (req, res) => {
   }
 });
 
-// API: Get Admin Appointments List
-app.get('/api/admin/appointments', (req, res) => {
+// API: Get Admin Appointments List (Supported on both /api/admin/appointments & /api/admin/records)
+const getAdminAppointmentsHandler = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  const records = googleSheetsService.getAllAppointments();
-  res.json({ appointments: records });
-});
+  const records = await googleSheetsService.getAllAppointments();
+  res.json({ success: true, records, appointments: records });
+};
+app.get('/api/admin/appointments', getAdminAppointmentsHandler);
+app.get('/api/admin/records', getAdminAppointmentsHandler);
 
 // API: Complete Appointment
-app.post('/api/admin/appointments/complete', (req, res) => {
-  const { id } = req.body;
+const completeAppointmentHandler = async (req, res) => {
+  const id = req.body.id || req.body.bookingId;
   if (!id) return res.status(400).json({ error: "Booking ID is required" });
   
-  const success = googleSheetsService.completeAppointment(id);
-  res.json({ success, id });
-});
+  const result = await googleSheetsService.completeAppointment(id);
+  res.json({ success: true, id, result });
+};
+app.post('/api/admin/appointments/complete', completeAppointmentHandler);
+app.post('/api/admin/records/complete', completeAppointmentHandler);
 
 // API: Delete Completed History
-app.post('/api/admin/appointments/delete-history', (req, res) => {
-  const count = googleSheetsService.deleteCompletedHistory();
-  res.json({ success: true, count });
-});
+const deleteHistoryHandler = async (req, res) => {
+  const result = await googleSheetsService.deleteCompletedHistory();
+  const count = (result && (result.deletedCount || result.count)) || 0;
+  res.json({ success: true, count, deletedCount: count });
+};
+app.post('/api/admin/appointments/delete-history', deleteHistoryHandler);
+app.post('/api/admin/records/history', deleteHistoryHandler);
+app.delete('/api/admin/records/history', deleteHistoryHandler);
 
 // API: Save Dynamic Gemini API Key
 app.post('/api/admin/config', (req, res) => {

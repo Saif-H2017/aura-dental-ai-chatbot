@@ -403,9 +403,10 @@
 
     async function fetchAdminRecords() {
       try {
-        const res = await fetch('/api/admin/records');
+        let res = await fetch('/api/admin/records');
+        if (!res.ok) res = await fetch('/api/admin/appointments');
         const data = await res.json();
-        allRecords = data.records || [];
+        allRecords = data.records || data.appointments || [];
         renderTables();
       } catch (err) {
         console.error("Failed to load records:", err);
