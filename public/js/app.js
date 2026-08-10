@@ -351,29 +351,32 @@ async function sendDrawerMessageToBot(text) {
       if (data.slotDate || data.slotTime) {
         const select = document.getElementById('slotSelect');
         if (select && select.options.length > 0) {
-          const targetDate = data.slotDate || '';
-          const targetTime = data.slotTime || '';
+          const targetDate = (data.slotDate || '').toLowerCase();
+          const targetTime = (data.slotTime || '').toLowerCase();
+          const normTime = targetTime.replace(/^0/, '');
           
-          // 1. Try exact value match e.g. "2026-08-10|10:00 AM"
-          let targetVal = `${targetDate}|${targetTime}`;
-          let matchingOpt = Array.from(select.options).find(opt => opt.value === targetVal);
+          // 1. Match exact date AND normalized time (ignoring leading zeros)
+          let matchingOpt = Array.from(select.options).find(opt => {
+            const optVal = opt.value.toLowerCase();
+            const normOptVal = optVal.replace(/\|0/, '|');
+            const targetVal = `${targetDate}|${normTime}`;
+            
+            return optVal === targetVal || 
+                   normOptVal === targetVal ||
+                   (targetDate && targetTime && optVal.includes(targetDate) && (optVal.includes(targetTime) || optVal.includes(normTime)));
+          });
 
-          // 2. Try match for both date AND time
-          if (!matchingOpt && targetDate && targetTime) {
+          // 2. Fallback match for time only (e.g. "2:15 PM" or "02:15 PM")
+          if (!matchingOpt && normTime) {
             matchingOpt = Array.from(select.options).find(opt => {
-              const val = opt.value.toLowerCase();
-              return val.includes(targetDate.toLowerCase()) && val.includes(targetTime.toLowerCase());
+              const optVal = opt.value.toLowerCase().replace(/\|0/, '|');
+              return optVal.includes(normTime) || optVal.includes(targetTime);
             });
           }
 
-          // 3. Fallback match for time only (e.g. "10:00 AM" or "2:15 PM")
-          if (!matchingOpt && targetTime) {
-            matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(targetTime.toLowerCase()));
-          }
-
-          // 4. Fallback match for date only
+          // 3. Fallback match for date only
           if (!matchingOpt && targetDate) {
-            matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(targetDate.toLowerCase()));
+            matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(targetDate));
           }
 
           if (matchingOpt) {

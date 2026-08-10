@@ -53,7 +53,7 @@ function getLiveRealWorldSlots() {
     allPossibleSlots.push({
       id: `slot-uk-today`,
       date: todayIso,
-      time: "05:30 PM",
+      time: "5:30 PM",
       display: `Today (${todayLabel}) at 5:30 PM UK Time`,
       shortLabel: `Today (${todayLabel}) at 5:30 PM`,
       urgentOnly: false
@@ -77,7 +77,7 @@ function getLiveRealWorldSlots() {
     {
       id: `slot-uk-tom-2`,
       date: tomorrowIso,
-      time: "02:15 PM",
+      time: "2:15 PM",
       display: `Tomorrow (${tomorrowLabel}) at 2:15 PM UK Time`,
       shortLabel: `Tomorrow (${tomorrowLabel}) at 2:15 PM`,
       urgentOnly: false
@@ -85,7 +85,7 @@ function getLiveRealWorldSlots() {
     {
       id: `slot-uk-tom-3`,
       date: tomorrowIso,
-      time: "04:30 PM",
+      time: "4:30 PM",
       display: `Tomorrow (${tomorrowLabel}) at 4:30 PM UK Time`,
       shortLabel: `Tomorrow (${tomorrowLabel}) at 4:30 PM`,
       urgentOnly: false
@@ -109,7 +109,7 @@ function getLiveRealWorldSlots() {
     {
       id: `slot-uk-day2-2`,
       date: dayAfterIso,
-      time: "03:30 PM",
+      time: "3:30 PM",
       display: `${dayAfterLabel} at 3:30 PM UK Time`,
       shortLabel: `${dayAfterLabel} at 3:30 PM`,
       urgentOnly: false
@@ -124,7 +124,7 @@ function getLiveRealWorldSlots() {
   allPossibleSlots.push({
     id: `slot-uk-day3-1`,
     date: day3Iso,
-    time: "01:00 PM",
+    time: "1:00 PM",
     display: `${day3Label} at 1:00 PM UK Time`,
     shortLabel: `${day3Label} at 1:00 PM`,
     urgentOnly: false
