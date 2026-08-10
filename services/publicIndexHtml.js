@@ -87,15 +87,45 @@ module.exports = `<!DOCTYPE html>
           </div>
         </div>
 
-        <div class="card-title-pill">
-          <span>📅 Next Available Appointments (UK Time Real-Time)</span>
-          <div class="live-indicator">
-            <div class="live-dot"></div> Live Calendar Sync
+        <!-- PREMIUM CLINICAL HIGHLIGHT SHOWCASE -->
+        <div class="hero-card-features">
+          <div class="hero-feature-item">
+            <span class="feature-icon">✨</span>
+            <div>
+              <strong>Gentle Dental Care</strong>
+              <p>Airflow® hygiene & IV sedation</p>
+            </div>
+          </div>
+          
+          <div class="hero-feature-item">
+            <span class="feature-icon">🚨</span>
+            <div>
+              <strong>Same-Day Triage</strong>
+              <p>Guaranteed emergency slots</p>
+            </div>
+          </div>
+          
+          <div class="hero-feature-item">
+            <span class="feature-icon">💎</span>
+            <div>
+              <strong>Invisalign® 3D</strong>
+              <p>Free 3D smile simulation</p>
+            </div>
+          </div>
+
+          <div class="hero-feature-item">
+            <span class="feature-icon">🛡️</span>
+            <div>
+              <strong>GDC & NHS Triage</strong>
+              <p>72 Harley Street, Marylebone W1G</p>
+            </div>
           </div>
         </div>
 
-        <div class="slot-chips-grid">
-          <button class="slot-chip-btn" onclick="openBookingModal()">Loading Live Slots...</button>
+        <div class="hero-card-actions">
+          <button class="btn-primary" onclick="openBookingModal()" style="width:100%; justify-content:center; padding: 0.9rem 1.2rem;">
+            📅 Schedule Consultation Online
+          </button>
         </div>
       </div>
     </div>
