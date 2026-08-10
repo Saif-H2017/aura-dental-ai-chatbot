@@ -92,18 +92,25 @@ class GoogleSheetsService {
   }
 
   async logAppointment(bookingData) {
+    if (!bookingData) return { success: false, error: "No booking data provided" };
+
+    const bookingId = bookingData.bookingId || bookingData.id || `LND-DEN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const triageCategory = (typeof bookingData.triageLevel === 'object' && bookingData.triageLevel !== null)
+      ? (bookingData.triageLevel.code || "ROUTINE_CARE")
+      : (bookingData.triageCategory || bookingData.triageCode || bookingData.triageLevel || "ROUTINE_CARE");
+
     const record = {
-      timestamp: new Date().toISOString(),
-      bookingId: bookingData.bookingId,
-      patientName: bookingData.patientName,
-      patientPhone: bookingData.patientPhone,
-      patientEmail: bookingData.patientEmail,
-      triageCategory: bookingData.triageLevel.code,
-      symptoms: bookingData.symptoms,
-      date: bookingData.date,
-      time: bookingData.time,
-      doctorAlertSent: bookingData.isEmergency ? "YES (PRIORITY SMS)" : "YES (STANDARD)",
-      status: "ACTIVE"
+      timestamp: bookingData.timestamp || new Date().toISOString(),
+      bookingId: bookingId,
+      patientName: bookingData.patientName || "Unknown Patient",
+      patientPhone: bookingData.patientPhone || "N/A",
+      patientEmail: bookingData.patientEmail || "N/A",
+      triageCategory: triageCategory,
+      symptoms: bookingData.symptoms || "General Consultation",
+      date: bookingData.date || new Date().toISOString().split('T')[0],
+      time: bookingData.time || "10:00 AM",
+      doctorAlertSent: (bookingData.isEmergency || (typeof triageCategory === 'string' && triageCategory.includes('URGENT'))) ? "YES (PRIORITY SMS)" : "YES (STANDARD)",
+      status: bookingData.status || "ACTIVE"
     };
 
     DEMO_PATIENT_RECORDS.unshift(record);
@@ -193,6 +200,19 @@ class GoogleSheetsService {
       console.error("Failed to read Google Sheets:", error.message);
       return DEMO_PATIENT_RECORDS;
     }
+  }
+
+  // Aliases for seamless route compatibility across server.js endpoints
+  addAppointment(bookingData) {
+    return this.logAppointment(bookingData);
+  }
+
+  getAllAppointments() {
+    return this.getAllRecords();
+  }
+
+  deleteCompletedHistory() {
+    return this.clearHistory();
   }
 }
 

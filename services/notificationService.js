@@ -26,17 +26,23 @@ class NotificationService {
    * 2. Email FROM AI Receptionist TO Doctor (Alert)
    */
   async sendAppointmentNotifications(bookingDetails) {
+    if (!bookingDetails) return { success: false, error: "No booking details provided" };
+
     const { bookingId, patientName, patientPhone, patientEmail, date, time, triageLevel, symptoms, isEmergency } = bookingDetails;
     const doctorEmail = process.env.SURGEON_EMAIL || "dr.wright@auradental.co.uk";
     const doctorPhone = process.env.SURGEON_PHONE || "+447911123456";
     const clinicName = process.env.CLINIC_NAME || "Aura Dental Studio London";
 
+    const triageTitle = (typeof triageLevel === 'object' && triageLevel !== null)
+      ? (triageLevel.title || triageLevel.name || "Routine Consultation")
+      : (triageLevel || "Routine Consultation");
+
     const logs = [];
 
     // 1. DOCTOR MOBILE SMS ALERT VIA TWILIO
     const doctorSmsMsg = isEmergency
-      ? `🚨 URGENT EMERGENCY DENTAL APPOINTMENT!\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSymptoms: ${symptoms}\nTriage: ${triageLevel.title}\nSlot: ${date} at ${time}\nRef: ${bookingId}`
-      : `📅 New Appointment Booked\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSlot: ${date} at ${time}\nType: ${triageLevel.title}\nRef: ${bookingId}`;
+      ? `🚨 URGENT EMERGENCY DENTAL APPOINTMENT!\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSymptoms: ${symptoms}\nTriage: ${triageTitle}\nSlot: ${date} at ${time}\nRef: ${bookingId}`
+      : `📅 New Appointment Booked\n\nPatient: ${patientName}\nPhone: ${patientPhone}\nSlot: ${date} at ${time}\nType: ${triageTitle}\nRef: ${bookingId}`;
 
     let doctorSmsResult = await this._sendSms(doctorPhone, doctorSmsMsg);
     logs.push({ recipient: `Doctor SMS (${doctorPhone})`, type: "SMS", status: doctorSmsResult.status, detail: doctorSmsResult.detail });
@@ -96,7 +102,7 @@ class NotificationService {
           <p style="margin: 6px 0;"><strong>📞 Phone:</strong> <a href="tel:${patientPhone}" style="color: #38BDF8;">${patientPhone}</a></p>
           <p style="margin: 6px 0;"><strong>✉️ Email:</strong> ${patientEmail}</p>
           <p style="margin: 6px 0;"><strong>🗓️ Requested Slot:</strong> ${date} at ${time}</p>
-          <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageLevel.title}</p>
+          <p style="margin: 6px 0;"><strong>🚨 Triage Severity:</strong> ${triageTitle}</p>
           <p style="margin: 6px 0;"><strong>🩺 Symptoms / Notes:</strong> ${symptoms}</p>
           <p style="margin: 6px 0;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
         </div>
@@ -110,6 +116,11 @@ class NotificationService {
       success: true,
       logs
     };
+  }
+
+  // Alias method for backward compatibility
+  async sendDualBookingNotifications(bookingDetails) {
+    return this.sendAppointmentNotifications(bookingDetails);
   }
 
   async _sendResendEmail(to, subject, html) {
