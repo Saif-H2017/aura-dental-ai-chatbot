@@ -177,12 +177,12 @@
       <form onsubmit="handleSurgeonLogin(event)">
         <div class="form-group" style="margin-bottom: 1.2rem;">
           <label style="font-weight: 700; font-size: 0.88rem; color: var(--brand-navy);">Authorized Email</label>
-          <input type="email" id="loginEmail" placeholder="saif.247ozx@gmail.com" required style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
+          <input type="email" id="loginEmail" placeholder="surgeon@auradental.co.uk" required autocomplete="off" style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
           <label style="font-weight: 700; font-size: 0.88rem; color: var(--brand-navy);">Surgeon Access Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••••••" required style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
+          <input type="password" id="loginPassword" placeholder="Enter password..." required autocomplete="new-password" style="width:100%; padding:0.8rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.95rem;">
         </div>
 
         <div id="loginError" style="color: var(--emergency-red); font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; display: none;"></div>
@@ -224,7 +224,7 @@
           Enter your Doctor Google Calendar email address to automatically generate live calendar events & sync patient appointments!
         </p>
         <div style="display: flex; gap: 0.75rem; max-width: 750px; flex-wrap: wrap;">
-          <input type="email" id="gcalEmailInput" placeholder="saif.247ozx@gmail.com" value="saif.247ozx@gmail.com" style="flex:1; min-width: 250px; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
+          <input type="email" id="gcalEmailInput" placeholder="doctor@clinic.co.uk" autocomplete="off" style="flex:1; min-width: 250px; padding:0.75rem 1rem; border-radius: var(--radius-lg); border:1px solid rgba(15,23,42,0.15); font-size:0.9rem;">
           <button class="btn-primary" style="background: #4285F4;" onclick="saveGCalConfig()">📅 Connect Google Calendar</button>
         </div>
         <div id="gcalStatus" style="font-size: 0.88rem; margin-top: 0.8rem; font-weight: 700;"></div>
