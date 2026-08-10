@@ -191,13 +191,14 @@ class GoogleCalendarService {
       const startM = String(minutes).padStart(2, '0');
       const endH = String((hours + 1) % 24).padStart(2, '0');
 
-      const startStr = `${cleanDate}T${startH}${startM}00Z`;
-      const endStr = `${cleanDate}T${endH}${startM}00Z`;
+      const startStr = `${cleanDate}T${startH}${startM}00`;
+      const endStr = `${cleanDate}T${endH}${startM}00`;
 
       const params = new URLSearchParams({
         action: 'TEMPLATE',
         text: summary || 'Aura Dental Studio Appointment',
         dates: `${startStr}/${endStr}`,
+        ctz: 'Europe/London',
         details: details || 'Dental appointment reserved with Dr. Alexander Wright at Aura Dental Studio.',
         location: location || '72 Harley Street, Marylebone, London W1G 7HG'
       });
@@ -219,34 +220,37 @@ class GoogleCalendarService {
       const now = new Date();
       const timeMax = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-      const response = await this.calendar.freebusy.query({
-        requestBody: {
-          timeMin: now.toISOString(),
-          timeMax: timeMax.toISOString(),
-          items: [{ id: this.calendarId }]
-        }
+      const response = await this.calendar.events.list({
+        calendarId: this.calendarId,
+        timeMin: now.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
       });
 
-      return liveSlots;
-    } catch (error) {
-      console.error("Error checking Google Calendar freeBusy:", error.message);
+      const busyEvents = response.data.items || [];
+      const busyTimes = busyEvents.map(e => e.start.dateTime || e.start.date);
+
+      return liveSlots.filter(slot => !busyTimes.some(b => b.includes(slot.date) && b.includes(slot.time)));
+    } catch (err) {
+      console.error("Failed to sync live Google Calendar events:", err.message);
       return liveSlots;
     }
   }
 
   async bookAppointment({ patientName, patientPhone, patientEmail, date, time, triageLevel, symptoms }) {
+    const isEmergency = Boolean(triageLevel && (triageLevel.code === 'EMERGENCY' || triageLevel.isEmergency));
     const bookingId = `LND-DEN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const isEmergency = triageLevel.code === "SAME_DAY_URGENT" || triageLevel.code === "CRITICAL_EMERGENCY";
-    
-    const summary = `${isEmergency ? '🚨 URGENT: ' : '📅 '}Dental Appointment - ${patientName}`;
-    const description = `Patient Details:\n- Name: ${patientName}\n- Phone: ${patientPhone}\n- Email: ${patientEmail}\n- Urgency: ${triageLevel.title}\n- Symptoms: ${symptoms}\n- Booking ID: ${bookingId}\n- Venue: Aura Dental Studio, 72 Harley Street, London W1G 7HG`;
+
+    const summary = `${isEmergency ? '🚨 URGENT' : '✨'} Dental Appt: ${patientName} (${triageLevel ? triageLevel.title || triageLevel : 'General'})`;
+    const description = `Patient: ${patientName}\nPhone: ${patientPhone}\nEmail: ${patientEmail}\nSymptoms: ${symptoms}\nTriage: ${triageLevel ? triageLevel.title || triageLevel : 'General'}\nBooking Ref: ${bookingId}`;
 
     const gcalUrl = this.generateGoogleCalendarUrl({
       summary,
       date,
       time,
       details: description,
-      location: '72 Harley Street, Marylebone, London W1G 7HG'
+      location: "72 Harley Street, Marylebone, London W1G 7HG"
     });
 
     if (!this.isProduction || !this.calendar) {
@@ -260,7 +264,7 @@ class GoogleCalendarService {
         clinicAddress: "72 Harley Street, Marylebone, London W1G 7HG",
         isEmergency,
         gcalUrl,
-        mode: "real_world_pkt"
+        mode: "europe_london"
       };
     }
 
@@ -272,8 +276,8 @@ class GoogleCalendarService {
         summary,
         location: '72 Harley Street, Marylebone, London W1G 7HG',
         description,
-        start: { dateTime: startIso, timeZone: 'Asia/Karachi' },
-        end: { dateTime: endIso, timeZone: 'Asia/Karachi' },
+        start: { dateTime: startIso, timeZone: 'Europe/London' },
+        end: { dateTime: endIso, timeZone: 'Europe/London' },
         attendees: [
           { email: patientEmail, displayName: patientName },
           { email: process.env.SURGEON_EMAIL || 'saif.247ozx@gmail.com' }
