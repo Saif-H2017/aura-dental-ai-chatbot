@@ -1006,7 +1006,7 @@ body {
     grid-template-columns: 1fr;
   }
   .ai-widget-collapsed {
-    bottom: 1.2rem;
+    bottom: 4.8rem;
     right: 1.2rem;
     padding: 0.75rem 1.2rem;
     font-size: 0.85rem;
@@ -1021,3 +1021,99 @@ body {
     border-radius: var(--radius-lg);
   }
 }
+
+/* CRO RESPONSE TIME BADGE */
+.response-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-sage-light);
+  color: var(--accent-sage);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-pill);
+  margin-top: 1.2rem;
+  border: 1px solid rgba(74, 107, 93, 0.2);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--routine-green);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* MOBILE STICKY BOTTOM CTA BAR (WIDTH <= 768px) */
+.mobile-sticky-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem 1.25rem;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 95;
+  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.btn-mobile-sticky-cta {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent-cyan), #0284C7);
+  color: #FFFFFF;
+  border: none;
+  padding: 0.85rem 1.2rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-mobile-sticky-cta:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .mobile-sticky-bar {
+    display: block;
+  }
+}
+
+/* LEGAL MODAL STYLING */
+.legal-modal-body {
+  max-height: 55vh;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  line-height: 1.6;
+  padding-right: 0.5rem;
+}
+
+.legal-modal-body p {
+  margin-bottom: 1rem;
+}
+
+.legal-modal-body code {
+  background: var(--bg-soft-gray);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+

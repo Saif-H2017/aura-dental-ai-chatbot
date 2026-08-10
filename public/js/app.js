@@ -209,11 +209,51 @@ function toggleVoiceDictation() {
 // Toggle Floating AI Drawer Overlay
 function toggleAIDrawer() {
   const drawer = document.getElementById('aiDrawer');
+  const stickyBar = document.getElementById('mobileStickyBar');
+  
   drawer.classList.toggle('active');
+  
   if (drawer.classList.contains('active')) {
+    if (stickyBar) stickyBar.style.display = 'none';
     document.getElementById('drawerInput').focus();
+  } else {
+    if (stickyBar && window.innerWidth <= 768) stickyBar.style.display = 'block';
   }
 }
+
+// Legal Compliance Modals (Privacy Policy, Terms of Service, GDPR)
+function openLegalModal(modalId) {
+  const modal = document.getElementById(modalId);
+  const stickyBar = document.getElementById('mobileStickyBar');
+  if (modal) {
+    modal.classList.add('active');
+    if (stickyBar) stickyBar.style.display = 'none';
+  }
+}
+
+function closeLegalModal(modalId) {
+  const modal = document.getElementById(modalId);
+  const stickyBar = document.getElementById('mobileStickyBar');
+  if (modal) {
+    modal.classList.remove('active');
+    if (stickyBar && window.innerWidth <= 768 && !document.getElementById('aiDrawer').classList.contains('active')) {
+      stickyBar.style.display = 'block';
+    }
+  }
+}
+
+// Global keydown escape listener for accessibility
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    ['privacyModal', 'termsModal', 'gdprModal', 'bookingModal'].forEach(id => {
+      const m = document.getElementById(id);
+      if (m && m.classList.contains('active')) m.classList.remove('active');
+    });
+    const drawer = document.getElementById('aiDrawer');
+    if (drawer && drawer.classList.contains('active')) toggleAIDrawer();
+  }
+});
+
 
 // Quick Slot Selection from Hero Card
 function selectSlotAndBook(date, time) {

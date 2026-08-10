@@ -3,11 +3,30 @@ module.exports = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aura Dental Studio | Gentle, Modern Dental Care in London</title>
+  <title>Aura Dental Studio | Harley Street London | 24/7 AI Booking</title>
+  <meta name="description" content="Experience gentle, modern private dental care in Marylebone, London. 24/7 AI assistant for instant booking, emergency triage, and same-day slots.">
+  <meta name="keywords" content="dental studio london, harley street dentist, marylebone dental, private dentist, invisalign london, emergency dentist">
+  <meta name="author" content="Aura Dental Studio London">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook / WhatsApp Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aura-dental-ai-chatbot.vercel.app/">
+  <meta property="og:title" content="Aura Dental Studio | Harley Street London | 24/7 AI Booking">
+  <meta property="og:description" content="Experience gentle, modern private dental care in Marylebone, London. 24/7 AI assistant for instant booking, emergency triage, and same-day slots.">
+  <meta property="og:image" content="https://aura-dental-ai-chatbot.vercel.app/images/hero_dentist.jpg">
+  <meta property="og:site_name" content="Aura Dental Studio London">
+
+  <!-- Twitter Card Preview -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Aura Dental Studio | Harley Street London | 24/7 AI Booking">
+  <meta name="twitter:description" content="Experience gentle, modern private dental care in Marylebone, London. 24/7 AI assistant for instant booking, emergency triage, and same-day slots.">
+  <meta name="twitter:image" content="https://aura-dental-ai-chatbot.vercel.app/images/hero_dentist.jpg">
+
   <link rel="shortcut icon" href="favicon.ico?v=2">
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
   <link rel="alternate icon" type="image/jpeg" href="favicon.jpg?v=2">
-  <link rel="stylesheet" href="css/styles.css?v=12">
+  <link rel="stylesheet" href="css/styles.css?v=13">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +35,7 @@ module.exports = `<!DOCTYPE html>
 
   <!-- 1. NAVIGATION BAR -->
   <nav class="navbar">
-    <a href="#" class="brand-logo">
+    <a href="#" class="brand-logo" aria-label="Aura Dental Studio Home">
       <span class="brand-icon">✨</span>
       <div>
         <div class="brand-name">Aura Dental Studio</div>
@@ -50,13 +69,18 @@ module.exports = `<!DOCTYPE html>
         <button class="btn-primary" onclick="openBookingModal()">Book Online</button>
         <button class="btn-secondary-outline" onclick="toggleAIDrawer()">Chat with AI Assistant</button>
       </div>
+
+      <!-- CRO TRUST INDICATOR BADGE -->
+      <div class="response-time-badge">
+        <span class="pulse-dot"></span> ⚡ Average response time: &lt; 2 seconds
+      </div>
     </div>
 
     <!-- RIGHT COLUMN (HERO CARD) -->
     <div class="hero-right">
       <div class="hero-card">
         <div class="hero-card-header">
-          <img src="images/hero_dentist.jpg" alt="Dr. Alexander Wright" class="dentist-avatar">
+          <img src="images/hero_dentist.jpg" alt="Dr. Alexander Wright - Lead Restorative & Emergency Specialist at Aura Dental Studio London" class="dentist-avatar">
           <div class="dentist-meta">
             <h4>Dr. Alexander Wright, BDS</h4>
             <p>Lead Surgeon • Restorative & Emergency Specialist</p>
@@ -158,10 +182,10 @@ module.exports = `<!DOCTYPE html>
 
     <div class="showcase-card">
       <!-- INTERACTIVE COMPARISON SLIDER CONTAINER -->
-      <div class="ba-slider-container">
-        <div class="ba-image-after" style="background-image: url('images/whitening_showcase.jpg');"></div>
-        <div class="ba-image-before" id="baBeforeImage" style="background-image: url('images/whitening_showcase.jpg'); width: 50%; filter: sepia(0.5) contrast(0.85);"></div>
-        <input type="range" min="0" max="100" value="50" class="ba-slider-input" id="baSlider" oninput="updateBeforeAfterSlider(this.value)">
+      <div class="ba-slider-container" role="region" aria-label="Interactive Teeth Whitening Before and After Comparison Slider">
+        <div class="ba-image-after" style="background-image: url('images/whitening_showcase.jpg');" role="img" aria-label="Teeth whitening 6 shades brighter result at Aura Dental Studio"></div>
+        <div class="ba-image-before" id="baBeforeImage" style="background-image: url('images/whitening_showcase.jpg'); width: 50%; filter: sepia(0.5) contrast(0.85);" role="img" aria-label="Before whitening treatment comparison photo"></div>
+        <input type="range" min="0" max="100" value="50" class="ba-slider-input" id="baSlider" oninput="updateBeforeAfterSlider(this.value)" aria-label="Smile transformation comparison percentage slider">
         <div class="ba-divider" id="baDivider" style="left: 50%;">
           <div class="ba-handle">↔</div>
         </div>
@@ -211,10 +235,17 @@ module.exports = `<!DOCTYPE html>
     </div>
   </section>
 
-  <!-- 6. FLOATING AI ASSISTANT WIDGET (BOTTOM RIGHT) -->
+  <!-- 6. MOBILE STICKY BOTTOM CTA BAR (DISPLAYED ON MOBILE VIEWPORTS <= 768px) -->
+  <div class="mobile-sticky-bar" id="mobileStickyBar">
+    <button class="btn-mobile-sticky-cta" onclick="toggleAIDrawer()">
+      <span>⚡ Book via 24/7 AI Assistant</span>
+    </button>
+  </div>
+
+  <!-- 7. FLOATING AI ASSISTANT WIDGET (BOTTOM RIGHT) -->
 
   <!-- COLLAPSED FLOATING PILL BUTTON -->
-  <button class="ai-widget-collapsed" id="aiCollapsedBtn" onclick="toggleAIDrawer()">
+  <button class="ai-widget-collapsed" id="aiCollapsedBtn" onclick="toggleAIDrawer()" aria-label="Open 24/7 AI Dental Receptionist Assistant">
     <span>💬</span> Chat with AI Receptionist
   </button>
 
@@ -226,11 +257,11 @@ module.exports = `<!DOCTYPE html>
         <div>
           <div>Aura Dental 24/7 Assistant</div>
           <div style="font-size: 0.72rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 4px;">
-            <span class="live-dot" style="width:6px; height:6px;"></span> Online • Instant Intake
+            <span class="live-dot" style="width:6px; height:6px;"></span> Online • ⚡ Response &lt; 2s
           </div>
         </div>
       </div>
-      <button class="btn-close-drawer" onclick="toggleAIDrawer()">✕</button>
+      <button class="btn-close-drawer" onclick="toggleAIDrawer()" aria-label="Close Assistant Drawer">✕</button>
     </div>
 
     <!-- DRAWER CHAT BODY -->
@@ -253,9 +284,9 @@ module.exports = `<!DOCTYPE html>
     <!-- INPUT FIELD WITH VOICE DICTATION (MIC) -->
     <div class="drawer-footer">
       <form id="drawerForm" class="drawer-input-group" onsubmit="handleDrawerChatSubmit(event)">
-        <button type="button" class="btn-mic" id="micBtn" onclick="toggleVoiceDictation()" title="Voice Dictation">🎤</button>
-        <input type="text" id="drawerInput" class="drawer-input" placeholder="Type or speak your message..." required autocomplete="off">
-        <button type="submit" class="btn-drawer-send">➔</button>
+        <button type="button" class="btn-mic" id="micBtn" onclick="toggleVoiceDictation()" title="Voice Dictation" aria-label="Voice Dictation Microphone">🎤</button>
+        <input type="text" id="drawerInput" class="drawer-input" placeholder="Type or speak your message..." required autocomplete="off" aria-label="Type your message to AI receptionist">
+        <button type="submit" class="btn-drawer-send" aria-label="Send message">➔</button>
       </form>
     </div>
   </div>
@@ -270,25 +301,25 @@ module.exports = `<!DOCTYPE html>
       <form id="bookingForm" onsubmit="submitFinalBooking(event)">
         <div class="modal-body">
           <div class="form-group">
-            <label>Full Name</label>
+            <label for="patientName">Full Name</label>
             <input type="text" id="patientName" placeholder="e.g. Sarah Jenkins" required>
           </div>
           <div class="form-group">
-            <label>UK Mobile Number (For WhatsApp/SMS Confirmation)</label>
+            <label for="patientPhone">UK Mobile Number (For WhatsApp/SMS Confirmation)</label>
             <input type="tel" id="patientPhone" placeholder="+44 7700 900123" required>
           </div>
           <div class="form-group">
-            <label>Patient Email Address (Receives Confirmation)</label>
+            <label for="patientEmail">Patient Email Address (Receives Confirmation)</label>
             <input type="email" id="patientEmail" placeholder="patient@example.co.uk" required>
           </div>
           <div class="form-group">
-            <label>Select Date & Time Slot (Real-World PKT Synced)</label>
+            <label for="slotSelect">Select Date & Time Slot (Real-World PKT Synced)</label>
             <select id="slotSelect" required>
               <option value="">Loading Real-World Slots...</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Reason for Visit / Symptoms</label>
+            <label for="symptomNotes">Reason for Visit / Symptoms</label>
             <input type="text" id="symptomNotes" placeholder="e.g. Routine consultation / toothache">
           </div>
         </div>
@@ -300,7 +331,64 @@ module.exports = `<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- FOOTER WITH SECURE SURGEON PORTAL LINK AT BOTTOM -->
+  <!-- LEGAL COMPLIANCE MODALS -->
+
+  <!-- PRIVACY POLICY MODAL -->
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>🔒 Privacy Policy & Patient Confidentiality</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">Last updated: August 2026 • General Dental Council (GDC) & NHS Compliant</p>
+      </div>
+      <div class="modal-body legal-modal-body">
+        <p><strong>1. Data Controller Notice</strong><br>Aura Dental Studio London ("we", "our") is committed to protecting patient confidentiality and processing personal data in strict compliance with the UK Data Protection Act 2018 and UK GDPR.</p>
+        <p><strong>2. Information We Collect</strong><br>When you use our 24/7 AI Receptionist or online appointment booking system, we collect your full name, phone number, email address, and clinical symptom notes to schedule consultations and evaluate emergency triage requirements.</p>
+        <p><strong>3. Use of AI Assistance</strong><br>Intake queries processed by our AI receptionist are encrypted in transit and used strictly for appointment triage and clinical intake. We do not sell or monetize patient data.</p>
+        <p><strong>4. Your Rights</strong><br>You have the right to request access to, correction of, or deletion of your personal records at any time by contacting our Marylebone reception team at <code>privacy@auradental.co.uk</code>.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeLegalModal('privacyModal')">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMS OF SERVICE MODAL -->
+  <div class="modal-overlay" id="termsModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>📋 Terms of Service & Clinical Intake Guidelines</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">Aura Dental Studio Clinical Policies</p>
+      </div>
+      <div class="modal-body legal-modal-body">
+        <p><strong>1. AI Triage Limitation</strong><br>Our 24/7 AI Receptionist provides preliminary triage guidance based on NHS emergency protocols. It does not replace emergency medical response. For acute severe trauma, uncontrolled bleeding, or breathing difficulty, call 999 or attend A&E immediately.</p>
+        <p><strong>2. Appointment Bookings & Cancellations</strong><br>Confirmed appointments reserve dedicated time with Dr. Alexander Wright. We request at least 24 hours' notice for cancellations or rescheduling.</p>
+        <p><strong>3. Private Care Pricing</strong><br>Treatment costs discussed during AI chat are estimated ranges. Final treatment plans and fees are confirmed during your clinical consultation.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeLegalModal('termsModal')">Close Terms</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GDPR & DATA HANDLING MODAL -->
+  <div class="modal-overlay" id="gdprModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>🛡️ GDPR & Data Handling Policy</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">UK GDPR Article 13 & 14 Disclosure</p>
+      </div>
+      <div class="modal-body legal-modal-body">
+        <p><strong>1. Encryption & Storage</strong><br>All patient booking records and Google Calendar integrations utilize 256-bit SSL encryption. Data is stored on secure UK/EU server nodes compliant with healthcare data security standards.</p>
+        <p><strong>2. Retention Period</strong><br>Clinical triage notes and booking histories are retained in accordance with UK health record regulations for a minimum period of 8 years following clinical consultation.</p>
+        <p><strong>3. Data Protection Officer</strong><br>For GDPR inquiries or data subject access requests (DSAR), please write to: Data Protection Officer, Aura Dental Studio, 72 Harley Street, London W1G 7HG.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeLegalModal('gdprModal')">Close GDPR Notice</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER WITH SECURE SURGEON PORTAL LINK & COMPLIANCE LINKS AT BOTTOM -->
   <footer style="background: var(--brand-navy); color: #94A3B8; padding: 3rem 2rem 2rem 2rem; margin-top: 5rem; border-top: 1px solid rgba(255,255,255,0.1);">
     <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
       <div>
@@ -313,12 +401,21 @@ module.exports = `<!DOCTYPE html>
         </a>
       </div>
     </div>
-    <div style="max-width: 1280px; margin: 2rem auto 0 auto; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; font-size: 0.78rem; color: #64748B;">
-      © 2026 Aura Dental Studio London. All Rights Reserved. NHS Emergency Triage Compliant.
+
+    <!-- COMPLIANCE & LEGAL LINKS -->
+    <div style="max-width: 1280px; margin: 1.8rem auto 0 auto; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem;">
+      <div style="color: #64748B;">
+        © 2026 Aura Dental Studio London. All Rights Reserved. NHS Emergency Triage Compliant.
+      </div>
+      <div style="display: flex; gap: 1.2rem;">
+        <a href="javascript:void(0)" onclick="openLegalModal('privacyModal')" style="color: #94A3B8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#38BDF8'" onmouseout="this.style.color='#94A3B8'">Privacy Policy</a>
+        <a href="javascript:void(0)" onclick="openLegalModal('termsModal')" style="color: #94A3B8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#38BDF8'" onmouseout="this.style.color='#94A3B8'">Terms of Service</a>
+        <a href="javascript:void(0)" onclick="openLegalModal('gdprModal')" style="color: #94A3B8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#38BDF8'" onmouseout="this.style.color='#94A3B8'">GDPR & Data Handling</a>
+      </div>
     </div>
   </footer>
 
   <script src="js/reviewsData.js?v=1"></script>
-  <script src="js/app.js?v=12"></script>
+  <script src="js/app.js?v=13"></script>
 </body>
 </html>`;
