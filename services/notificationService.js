@@ -85,8 +85,8 @@ class NotificationService {
       </div>
     `;
 
-    const patientRes = await this._sendResendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
-    logs.push({ recipient: `Patient (${patientEmail})`, type: "RESEND EMAIL TO PATIENT", status: patientRes.status, detail: patientRes.detail });
+    const patientRes = await this._sendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
+    logs.push({ recipient: `Patient (${patientEmail})`, type: "EMAIL TO PATIENT", status: patientRes.status, detail: patientRes.detail });
 
     // 3. EMAIL 2: TO DOCTOR (Alert)
     const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
@@ -109,8 +109,8 @@ class NotificationService {
       </div>
     `;
 
-    const doctorRes = await this._sendResendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
-    logs.push({ recipient: `Doctor (${doctorEmail})`, type: "RESEND EMAIL TO DOCTOR", status: doctorRes.status, detail: doctorRes.detail });
+    const doctorRes = await this._sendEmail(doctorEmail, doctorEmailSubject, doctorEmailHtml);
+    logs.push({ recipient: `Doctor (${doctorEmail})`, type: "EMAIL TO DOCTOR", status: doctorRes.status, detail: doctorRes.detail });
 
     return {
       success: true,
@@ -123,50 +123,100 @@ class NotificationService {
     return this.sendAppointmentNotifications(bookingDetails);
   }
 
-  async _sendResendEmail(to, subject, html) {
+  async _sendEmail(to, subject, html) {
+    const doctorEmail = process.env.SURGEON_EMAIL || 'saif.247ozx@gmail.com';
     const apiKey = this.resendApiKey || process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      return { status: "SIMULATED_SUCCESS", detail: `[Demo Mode] Email logged for ${to}` };
+
+    // 1. Try Nodemailer SMTP (if configured via env vars)
+    const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
+    const smtpPass = process.env.GMAIL_APP_PASS || process.env.SMTP_PASS;
+    if (smtpUser && smtpPass) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          service: process.env.GMAIL_USER ? 'gmail' : undefined,
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587', 10),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: { user: smtpUser, pass: smtpPass }
+        });
+
+        const info = await transporter.sendMail({
+          from: `"Aura Dental Studio" <${smtpUser}>`,
+          to,
+          subject,
+          html
+        });
+        return { status: "SENT_NODEMAILER", detail: `Nodemailer messageId: ${info.messageId}` };
+      } catch (err) {
+        console.error("Nodemailer SMTP failed, falling back to Resend API:", err.message);
+      }
     }
 
-    return new Promise((resolve) => {
-      const postData = JSON.stringify({
-        from: 'Aura Dental Studio <onboarding@resend.dev>',
-        to: [to],
-        subject,
-        html
-      });
+    // 2. Try Resend API
+    if (apiKey) {
+      const fromAddress = process.env.RESEND_FROM_EMAIL || 'Aura Dental Studio <onboarding@resend.dev>';
+      
+      const sendResendPromise = (targetRecipient) => {
+        return new Promise((resolve) => {
+          const postData = JSON.stringify({
+            from: fromAddress,
+            to: [targetRecipient],
+            subject,
+            html
+          });
 
-      const options = {
-        hostname: 'api.resend.com',
-        path: '/emails',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+          const options = {
+            hostname: 'api.resend.com',
+            path: '/emails',
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData)
+            }
+          };
+
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (chunk) => body += chunk);
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                resolve({ status: "SENT_RESEND", detail: `Resend API success: ${body}` });
+              } else {
+                resolve({ status: "FAILED", statusCode: res.statusCode, detail: body });
+              }
+            });
+          });
+
+          req.on('error', (e) => {
+            resolve({ status: "FAILED", detail: e.message });
+          });
+
+          req.write(postData);
+          req.end();
+        });
       };
 
-      const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => body += chunk);
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve({ status: "SENT", detail: `Resend API success: ${body}` });
-          } else {
-            resolve({ status: "FAILED", detail: `Resend API Error (${res.statusCode}): ${body}` });
-          }
-        });
-      });
+      // Try sending to target patient email
+      let result = await sendResendPromise(to);
 
-      req.on('error', (e) => {
-        resolve({ status: "FAILED", detail: e.message });
-      });
+      // If Resend rejected because of onboarding domain testing restriction (only allowed to send to owner email saif.247ozx@gmail.com), failover send to owner email!
+      if (result.status === "FAILED" && (result.statusCode === 403 || result.statusCode === 422 || (result.detail && result.detail.includes("only send to your own email")))) {
+        console.warn(`⚠️ Resend onboarding domain restriction: cannot send directly to ${to}. Forwarding confirmation copy to verified doctor email (${doctorEmail}).`);
+        const failoverSubject = `[Patient Confirmation for ${to}] ${subject}`;
+        const failoverResult = await sendResendPromise(doctorEmail);
+        if (failoverResult.status === "SENT_RESEND") {
+          return { status: "SENT_RESEND_TEST_FAILOVER", detail: `Confirmation delivered to registered email ${doctorEmail} for patient ${to} (Resend Testing Domain Restriction)` };
+        }
+      }
 
-      req.write(postData);
-      req.end();
-    });
+      return result;
+    }
+
+    // 3. Fallback Demo Mode
+    console.log(`ℹ️ [Demo Mode] Email confirmation simulated for ${to}: "${subject}"`);
+    return { status: "SIMULATED_SUCCESS", detail: `[Demo Mode] Email logged for ${to}` };
   }
 
   async _sendSms(to, body) {
