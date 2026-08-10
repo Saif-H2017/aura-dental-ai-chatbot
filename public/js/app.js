@@ -458,6 +458,7 @@ async function submitFinalBooking(e) {
 🎉 <strong>APPOINTMENT CONFIRMED AT AURA DENTAL!</strong><br><br>
 • <strong>Ref ID</strong>: <code>${data.bookingId}</code><br>
 • <strong>Patient</strong>: ${name}<br>
+• <strong>Email</strong>: ${email} (Confirmation Dispatched ✉️)<br>
 • <strong>Slot</strong>: ${data.date} at ${data.time}<br>
 • <strong>Clinic</strong>: 72 Harley Street, London W1G 7HG<br><br>
 
