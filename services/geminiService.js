@@ -193,63 +193,27 @@ If the patient mentions severe pain, toothache, broken tooth, bleeding, swelling
       };
     }
 
-    // 7. SLOT SELECTION HANDLER (Option 1, 2, 3, 4, 5)
-    if (msg === "option 1" || msg === "1" || msg.includes("10:00") || msg.includes("10am")) {
-      const s = liveSlots[0];
-      return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent choice! I have held **${s.display}** for your consultation with Dr. Alexander Wright.\n\nPlease click **Book Online** (or provide your **Full Name**, **Phone Number**, and **Email**) so we can send your instant email confirmation!`,
-        triage,
-        selectedSlot: s.display,
-        slotDate: s.date,
-        slotTime: s.time,
-        promptForDetails: true
-      };
+    // 7. SLOT SELECTION HANDLER (Option 1, 2, 3, 4, 5 or time matching)
+    let selectedSlotObj = null;
+    if (msg.includes("option 1") || msg === "1" || msg.includes("first slot") || (liveSlots[0] && msg.includes(liveSlots[0].time.toLowerCase()))) {
+      selectedSlotObj = liveSlots[0];
+    } else if (msg.includes("option 2") || msg === "2" || msg.includes("second slot") || (liveSlots[1] && msg.includes(liveSlots[1].time.toLowerCase()))) {
+      selectedSlotObj = liveSlots[1];
+    } else if (msg.includes("option 3") || msg === "3" || msg.includes("third slot") || (liveSlots[2] && msg.includes(liveSlots[2].time.toLowerCase()))) {
+      selectedSlotObj = liveSlots[2];
+    } else if (msg.includes("option 4") || msg === "4" || msg.includes("fourth slot") || (liveSlots[3] && msg.includes(liveSlots[3].time.toLowerCase()))) {
+      selectedSlotObj = liveSlots[3];
+    } else if (msg.includes("option 5") || msg === "5" || msg.includes("fifth slot") || (liveSlots[4] && msg.includes(liveSlots[4].time.toLowerCase()))) {
+      selectedSlotObj = liveSlots[4];
     }
 
-    if (msg === "option 2" || msg === "2" || msg.includes("2:15") || msg.includes("2:15pm")) {
-      const s = liveSlots[1];
+    if (selectedSlotObj) {
       return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nGreat choice! I have reserved **${s.display}** for your visit to Aura Dental Studio.\n\nPlease click **Book Online** (or provide your **Full Name**, **Phone**, and **Email**) to confirm!`,
+        reply: `🎉 **Slot Reserved: ${selectedSlotObj.display}**\n\nExcellent! I have pre-selected **${selectedSlotObj.display}** for your consultation with Dr. Alexander Wright.\n\nPlease confirm your details in the booking form below to finalize!`,
         triage,
-        selectedSlot: s.display,
-        slotDate: s.date,
-        slotTime: s.time,
-        promptForDetails: true
-      };
-    }
-
-    if (msg === "option 3" || msg === "3" || msg.includes("4:30") || msg.includes("4:30pm")) {
-      const s = liveSlots[2];
-      return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nPerfect! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your **Full Name**, **Phone**, and **Email**) to finalize!`,
-        triage,
-        selectedSlot: s.display,
-        slotDate: s.date,
-        slotTime: s.time,
-        promptForDetails: true
-      };
-    }
-
-    if (msg === "option 4" || msg === "4" || msg.includes("11:30")) {
-      const s = liveSlots[3];
-      return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nWonderful! I have reserved **${s.display}** for your visit.\n\nPlease click **Book Online** (or reply with your details) to confirm!`,
-        triage,
-        selectedSlot: s.display,
-        slotDate: s.date,
-        slotTime: s.time,
-        promptForDetails: true
-      };
-    }
-
-    if (msg === "option 5" || msg === "5" || msg.includes("3:30")) {
-      const s = liveSlots[4];
-      return {
-        reply: `🎉 **Slot Selected: ${s.display}**\n\nExcellent! I have held **${s.display}** for your appointment.\n\nPlease click **Book Online** (or reply with your details) to finalize!`,
-        triage,
-        selectedSlot: s.display,
-        slotDate: s.date,
-        slotTime: s.time,
+        selectedSlot: selectedSlotObj.display,
+        slotDate: selectedSlotObj.date,
+        slotTime: selectedSlotObj.time,
         promptForDetails: true
       };
     }

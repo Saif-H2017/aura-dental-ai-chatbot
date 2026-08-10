@@ -346,16 +346,46 @@ async function sendDrawerMessageToBot(text) {
       appendDrawerBubble(data.reply, 'bot');
     }
 
-    // IF USER SELECTED A SLOT OR REQUESTED CALLBACK, OPEN MODAL
+    // IF USER SELECTED A SLOT OR REQUESTED CALLBACK, PRE-FILL SELECT & OPEN MODAL
     if (data.promptForDetails || data.selectedSlot || data.isCallbackPrompted) {
-      if (data.slotDate && data.slotTime) {
+      if (data.slotDate || data.slotTime) {
         const select = document.getElementById('slotSelect');
-        const matchingOpt = Array.from(select.options).find(opt => opt.value.includes(data.slotDate));
-        if (matchingOpt) select.value = matchingOpt.value;
+        if (select && select.options.length > 0) {
+          const targetDate = data.slotDate || '';
+          const targetTime = data.slotTime || '';
+          
+          // 1. Try exact value match e.g. "2026-08-10|10:00 AM"
+          let targetVal = `${targetDate}|${targetTime}`;
+          let matchingOpt = Array.from(select.options).find(opt => opt.value === targetVal);
+
+          // 2. Try match for both date AND time
+          if (!matchingOpt && targetDate && targetTime) {
+            matchingOpt = Array.from(select.options).find(opt => {
+              const val = opt.value.toLowerCase();
+              return val.includes(targetDate.toLowerCase()) && val.includes(targetTime.toLowerCase());
+            });
+          }
+
+          // 3. Fallback match for time only (e.g. "10:00 AM" or "2:15 PM")
+          if (!matchingOpt && targetTime) {
+            matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(targetTime.toLowerCase()));
+          }
+
+          // 4. Fallback match for date only
+          if (!matchingOpt && targetDate) {
+            matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(targetDate.toLowerCase()));
+          }
+
+          if (matchingOpt) {
+            select.value = matchingOpt.value;
+            console.log(`✅ Auto pre-selected slot: "${matchingOpt.text}" (${matchingOpt.value})`);
+          }
+        }
       }
+
       setTimeout(() => {
         openBookingModal();
-      }, 1000);
+      }, 500);
     }
 
   } catch (err) {
