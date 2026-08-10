@@ -47,48 +47,7 @@ class NotificationService {
     let doctorSmsResult = await this._sendSms(doctorPhone, doctorSmsMsg);
     logs.push({ recipient: `Doctor SMS (${doctorPhone})`, type: "SMS", status: doctorSmsResult.status, detail: doctorSmsResult.detail });
 
-    // 2. EMAIL 1: TO PATIENT (Confirmation)
-    const patientEmailSubject = `✨ Appointment Confirmation - ${clinicName} [Ref: ${bookingId}]`;
-    const patientEmailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #FAF7F2; padding: 20px; border-radius: 16px;">
-        <div style="background: #0F172A; padding: 25px; border-radius: 12px; text-align: center; color: white;">
-          <h1 style="margin: 0; font-size: 24px;">✨ ${clinicName}</h1>
-          <p style="margin: 5px 0 0 0; color: #38BDF8; font-size: 14px;">Marylebone • London</p>
-        </div>
-        
-        <div style="background: white; padding: 25px; border-radius: 12px; margin-top: 20px; border: 1px solid #e2e8f0;">
-          <h2 style="color: #0F172A; margin-top: 0;">Hello ${patientName},</h2>
-          <p style="color: #475569; font-size: 16px; line-height: 1.5;">
-            Your appointment with <strong>Dr. Alexander Wright, BDS</strong> has been successfully booked!
-          </p>
-          
-          <div style="background: #F8FAFC; padding: 15px; border-radius: 8px; border-left: 4px solid #38BDF8; margin: 20px 0;">
-            <p style="margin: 5px 0; color: #0F172A;"><strong>📅 Date:</strong> ${date}</p>
-            <p style="margin: 5px 0; color: #0F172A;"><strong>⏰ Time:</strong> ${time}</p>
-            <p style="margin: 5px 0; color: #0F172A;"><strong>📍 Location:</strong> 72 Harley Street, Marylebone, London W1G 7HG</p>
-            <p style="margin: 5px 0; color: #0F172A;"><strong>🔖 Booking Ref:</strong> ${bookingId}</p>
-            <p style="margin: 5px 0; color: #0F172A;"><strong>🩺 Treatment/Reason:</strong> ${symptoms}</p>
-          </div>
-
-          ${isEmergency ? `
-            <div style="background: #FEF2F2; border: 1px solid #FCA5A5; color: #EF4444; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 15px;">
-              ⚠️ Priority Emergency Care: Please arrive 10 minutes early. Pain control protocol is prepared.
-            </div>
-          ` : ''}
-
-          <p style="color: #64748B; font-size: 14px;">
-            If you need to reschedule or have any questions before your visit, please call us at <strong>+44 20 7946 0912</strong>.
-          </p>
-
-          <p style="color: #0F172A; margin-bottom: 0;">Warm regards,<br><strong>Dr. Alexander Wright & Team</strong><br>Aura Dental Studio</p>
-        </div>
-      </div>
-    `;
-
-    const patientRes = await this._sendEmail(patientEmail, patientEmailSubject, patientEmailHtml);
-    logs.push({ recipient: `Patient (${patientEmail})`, type: "EMAIL TO PATIENT", status: patientRes.status, detail: patientRes.detail });
-
-    // 3. EMAIL 2: TO DOCTOR (Alert)
+    // DOCTOR EMAIL CONFIRMATION ALERT (Only doctor receives email alert)
     const doctorEmailSubject = `${isEmergency ? '🚨 URGENT BOOKING ALERT' : '📅 NEW APPOINTMENT BOOKED'}: ${patientName} [Ref: ${bookingId}]`;
     const doctorEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0F172A; padding: 20px; border-radius: 16px; color: white;">
