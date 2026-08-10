@@ -206,6 +206,18 @@ app.post('/api/admin/appointments/delete-history', deleteHistoryHandler);
 app.post('/api/admin/records/history', deleteHistoryHandler);
 app.delete('/api/admin/records/history', deleteHistoryHandler);
 
+// API: Clear All Demo Records (Start Clean Client Mode)
+app.post('/api/admin/records/purge-demo', (req, res) => {
+  const result = googleSheetsService.clearAllRecords();
+  res.json(result);
+});
+
+// API: Restore Sample Demo Records
+app.post('/api/admin/records/restore-demo', (req, res) => {
+  const result = googleSheetsService.restoreDemoRecords();
+  res.json(result);
+});
+
 // API: Save Dynamic Gemini API Key
 app.post('/api/admin/config', (req, res) => {
   const { geminiKey } = req.body;

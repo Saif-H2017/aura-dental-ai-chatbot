@@ -1,4 +1,4 @@
-const DEMO_PATIENT_RECORDS = [
+let DEMO_PATIENT_RECORDS = process.env.DISABLE_DEMO_DATA === 'true' ? [] : [
   {
     timestamp: "2026-08-07T14:20:00Z",
     bookingId: "LND-DEN-882103",
@@ -65,6 +65,8 @@ const DEMO_PATIENT_RECORDS = [
     status: "ACTIVE"
   }
 ];
+
+const INITIAL_SEED_DATA = [...DEMO_PATIENT_RECORDS];
 
 class GoogleSheetsService {
   constructor() {
@@ -200,6 +202,17 @@ class GoogleSheetsService {
       console.error("Failed to read Google Sheets:", error.message);
       return DEMO_PATIENT_RECORDS;
     }
+  }
+
+  clearAllRecords() {
+    DEMO_PATIENT_RECORDS.length = 0;
+    return { success: true, count: 0, message: "Database reset to clean client mode." };
+  }
+
+  restoreDemoRecords() {
+    DEMO_PATIENT_RECORDS.length = 0;
+    DEMO_PATIENT_RECORDS.push(...INITIAL_SEED_DATA);
+    return { success: true, count: DEMO_PATIENT_RECORDS.length, message: "Sample demo patient records restored." };
   }
 
   // Aliases for seamless route compatibility across server.js endpoints

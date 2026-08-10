@@ -288,8 +288,12 @@
 
       <!-- ACTIVE BOOKINGS SECTION -->
       <div id="activeSection">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800;">📋 Pending Patient Appointments (Tick checkbox when appointment takes place)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <h2 style="font-size: 1.2rem; color: var(--brand-navy); font-weight: 800; margin: 0;">📋 Pending Patient Appointments</h2>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-primary" style="background: #64748B; font-size: 0.82rem; padding: 0.5rem 0.9rem;" onclick="purgeDemoRecords()" title="Clear sample demo records for client handover">🧹 Start Clean Client Mode</button>
+            <button class="btn-primary" style="background: var(--brand-navy); font-size: 0.82rem; padding: 0.5rem 0.9rem;" onclick="restoreDemoRecords()" title="Reload sample demo data for presentation">↺ Restore Demo Data</button>
+          </div>
         </div>
 
         <table class="data-table">
@@ -506,6 +510,32 @@
         }
       } catch (e) {
         console.error("Failed to clear history:", e);
+      }
+    }
+
+    async function purgeDemoRecords() {
+      if (!confirm("Start Clean Client Mode? This will remove sample demo patient records so your client receives a 100% clean database.")) return;
+      try {
+        const res = await fetch('/api/admin/records/purge-demo', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          allRecords = [];
+          renderTables();
+        }
+      } catch (e) {
+        console.error("Failed to purge demo records:", e);
+      }
+    }
+
+    async function restoreDemoRecords() {
+      try {
+        const res = await fetch('/api/admin/records/restore-demo', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          await fetchAdminRecords();
+        }
+      } catch (e) {
+        console.error("Failed to restore demo records:", e);
       }
     }
 
