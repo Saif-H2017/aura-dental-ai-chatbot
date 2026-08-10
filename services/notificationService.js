@@ -126,9 +126,57 @@ class NotificationService {
   async _sendEmail(to, subject, html) {
     const doctorEmail = process.env.SURGEON_EMAIL || 'saif.247ozx@gmail.com';
     const apiKey = this.resendApiKey || process.env.RESEND_API_KEY || ['re_TDgT273x', 'F1q5gV7fAdTMhenAR14XHnJ1'].join('_');
+    const brevoApiKey = process.env.BREVO_API_KEY;
 
-    // 1. DIRECT NODEMAILER TRANSPORT (Direct send from clinic email to patient email)
-    const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER || 'saif.247ozx@gmail.com';
+    // 1. BREVO API TRANSPORT (Delivers to EVERY recipient email address worldwide with no domain restrictions)
+    if (brevoApiKey) {
+      try {
+        const postData = JSON.stringify({
+          sender: { name: "Aura Dental Studio London", email: doctorEmail },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html
+        });
+
+        const options = {
+          hostname: 'api.brevo.com',
+          path: '/v3/smtp/email',
+          method: 'POST',
+          headers: {
+            'api-key': brevoApiKey,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        };
+
+        const result = await new Promise((resolve) => {
+          const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                resolve({ status: "SENT_BREVO", detail: `Brevo success: ${body}` });
+              } else {
+                resolve({ status: "FAILED", statusCode: res.statusCode, detail: body });
+              }
+            });
+          });
+          req.on('error', e => resolve({ status: "FAILED", detail: e.message }));
+          req.write(postData);
+          req.end();
+        });
+
+        if (result.status === "SENT_BREVO") {
+          console.log(`✅ Direct Email delivered to patient (${to}) via Brevo API.`);
+          return result;
+        }
+      } catch (err) {
+        console.warn(`⚠️ Brevo API transport warning: ${err.message}`);
+      }
+    }
+
+    // 2. DIRECT GMAIL / NODEMAILER SMTP (Delivers to EVERY recipient email address worldwide with no domain restrictions)
+    const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
     const smtpPass = process.env.GMAIL_APP_PASS || process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
 
     if (smtpUser && smtpPass) {
@@ -136,8 +184,8 @@ class NotificationService {
         const nodemailer = require('nodemailer');
         const transporter = nodemailer.createTransport({
           service: 'gmail',
-          host: 'smtp.gmail.com',
-          port: 465,
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '465', 10),
           secure: true,
           auth: { user: smtpUser, pass: smtpPass }
         });
@@ -149,14 +197,14 @@ class NotificationService {
           html: html
         });
 
-        console.log(`✅ Direct Email Dispatched via Nodemailer to ${to} (Message ID: ${info.messageId})`);
-        return { status: "SENT_DIRECT_EMAIL", detail: `Delivered directly to ${to} (Message ID: ${info.messageId})` };
+        console.log(`✅ Direct Email Dispatched via Nodemailer/SMTP to ${to} (Message ID: ${info.messageId})`);
+        return { status: "SENT_DIRECT_NODEMAILER", detail: `Delivered directly to ${to} via SMTP (Message ID: ${info.messageId})` };
       } catch (err) {
-        console.warn(`⚠️ Direct SMTP send warning: ${err.message}. Proceeding to API transport...`);
+        console.warn(`⚠️ Direct SMTP send warning: ${err.message}. Falling back to Resend API...`);
       }
     }
 
-    // 2. Resend API Transport with Direct Delivery Guarantee
+    // 3. RESEND API TRANSPORT
     if (apiKey) {
       const fromAddress = process.env.RESEND_FROM_EMAIL || 'Aura Dental Studio <onboarding@resend.dev>';
       
@@ -174,7 +222,7 @@ class NotificationService {
             path: '/emails',
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              'Authorization': 'Bearer ' + apiKey,
               'Content-Type': 'application/json',
               'Content-Length': Buffer.byteLength(postData)
             }
@@ -201,7 +249,7 @@ class NotificationService {
         });
       };
 
-      // Send to target patient email
+      // Try sending directly to patient email
       let result = await sendResendPromise(to);
 
       if (result.status === "SENT_RESEND") {
@@ -209,10 +257,10 @@ class NotificationService {
         return result;
       }
 
-      // If test domain restriction applies, send copy to doctor email so no booking alert is lost
+      // If test domain restriction applies (Resend onboarding domain only permits sending to registered owner email), forward confirmation copy to clinic email
       if (result.status === "FAILED" && (result.statusCode === 403 || result.statusCode === 422 || (result.detail && result.detail.includes("only send to your own email")))) {
-        console.warn(`ℹ️ Resend test domain active: sending confirmation copy for patient (${to}) to clinic inbox (${doctorEmail}).`);
-        const failoverSubject = `[Patient Booking Confirmation for ${to}] ${subject}`;
+        console.warn(`ℹ️ Resend test domain active: sending patient confirmation copy (${to}) to clinic inbox (${doctorEmail}).`);
+        const failoverSubject = `[Patient Confirmation for ${to}] ${subject}`;
         const failoverResult = await sendResendPromise(doctorEmail);
         if (failoverResult.status === "SENT_RESEND") {
           return { status: "SENT_RESEND_CLINIC_COPY", detail: `Booking confirmation dispatched to clinic inbox for patient ${to}` };
@@ -222,7 +270,7 @@ class NotificationService {
       return result;
     }
 
-    // 3. Fallback Log Output
+    // 4. Fallback Log Output
     console.log(`ℹ️ Email confirmation generated for ${to}: "${subject}"`);
     return { status: "SIMULATED_SUCCESS", detail: `Email confirmation logged for ${to}` };
   }
