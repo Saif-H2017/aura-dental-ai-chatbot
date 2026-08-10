@@ -163,7 +163,7 @@ app.get('/api/slots', async (req, res) => {
 });
 
 // API: Book Appointment (Dispatches Email + Add to Google Calendar)
-app.post('/api/appointments/book', async (req, res) => {
+const handleBookingRequest = async (req, res) => {
   try {
     const { patientName, patientPhone, patientEmail, date, time, symptoms, painScore } = req.body;
 
@@ -218,7 +218,9 @@ app.post('/api/appointments/book', async (req, res) => {
     console.error("Error booking appointment:", error);
     res.status(500).json({ error: "Failed to process booking", details: error.message });
   }
-});
+};
+app.post('/api/appointments/book', handleBookingRequest);
+app.post('/api/book', handleBookingRequest);
 
 // API: Get Admin Appointments List (Supported on both /api/admin/appointments & /api/admin/records)
 const getAdminAppointmentsHandler = async (req, res) => {

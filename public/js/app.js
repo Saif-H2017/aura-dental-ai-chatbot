@@ -17,7 +17,16 @@ async function loadLiveRealWorldSlots() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    const slots = data.slots || [];
+    let bookedLocal = [];
+    try {
+      bookedLocal = JSON.parse(localStorage.getItem('aura_booked_slots') || '[]');
+    } catch (e) {}
+
+    const slots = (data.slots || []).filter(s => !bookedLocal.some(b => {
+      const bTime = (b.time || '').toLowerCase().replace(/^0/, '').trim();
+      const sTime = (s.time || '').toLowerCase().replace(/^0/, '').trim();
+      return b.date === s.date && bTime === sTime;
+    }));
     
     if (slots.length > 0) {
       if (select) {
@@ -32,7 +41,9 @@ async function loadLiveRealWorldSlots() {
         `).join('');
       }
     } else {
-      throw new Error("No open slots returned");
+      if (select) {
+        select.innerHTML = `<option value="">⚠️ All upcoming slots fully booked today - Call reception</option>`;
+      }
     }
   } catch (e) {
     console.warn("Unable to fetch live calendar slots:", e.message);
@@ -505,6 +516,15 @@ async function submitFinalBooking(e) {
 
     if (data.success) {
       playAudioChime('response');
+
+      // Save booked slot locally & refresh dropdown options immediately
+      try {
+        const booked = JSON.parse(localStorage.getItem('aura_booked_slots') || '[]');
+        booked.push({ date: data.date || date, time: data.time || time });
+        localStorage.setItem('aura_booked_slots', JSON.stringify(booked));
+      } catch (e) {}
+
+      loadLiveRealWorldSlots();
 
       const gcalUrl = data.gcalUrl || `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dental+Appointment&details=Aura+Dental+Studio+Appointment&location=72+Harley+Street+London`;
 

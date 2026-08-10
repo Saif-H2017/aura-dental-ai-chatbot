@@ -1,3 +1,36 @@
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+const TMP_FILE = path.join(os.tmpdir(), 'aura_booked_appointments.json');
+
+function loadTmpBookings() {
+  try {
+    if (fs.existsSync(TMP_FILE)) {
+      const data = fs.readFileSync(TMP_FILE, 'utf8');
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+  } catch (e) {
+    // Ignore tmp read errors
+  }
+  return [];
+}
+
+function saveTmpBooking(record) {
+  try {
+    const existing = loadTmpBookings();
+    if (record.clear) {
+      fs.writeFileSync(TMP_FILE, JSON.stringify([], null, 2), 'utf8');
+    } else {
+      existing.unshift(record);
+      fs.writeFileSync(TMP_FILE, JSON.stringify(existing, null, 2), 'utf8');
+    }
+  } catch (e) {
+    // Ignore tmp write errors
+  }
+}
+
 let DEMO_PATIENT_RECORDS = process.env.DISABLE_DEMO_DATA === 'true' ? [] : [
   {
     timestamp: "2026-08-07T14:20:00Z",
@@ -79,7 +112,7 @@ class GoogleSheetsService {
         const auth = new google.auth.JWT(
           process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
           null,
-          (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+          process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : null,
           ['https://www.googleapis.com/auth/spreadsheets']
         );
         this.sheets = google.sheets({ version: 'v4', auth });
@@ -116,6 +149,7 @@ class GoogleSheetsService {
     };
 
     DEMO_PATIENT_RECORDS.unshift(record);
+    saveTmpBooking(record);
 
     if (!this.isProduction) {
       return { success: true, mode: "demo", record };
@@ -174,8 +208,18 @@ class GoogleSheetsService {
   }
 
   async getAllRecords() {
+    let records = [...DEMO_PATIENT_RECORDS];
+    const tmp = loadTmpBookings();
+    if (tmp.length > 0) {
+      tmp.forEach(r => {
+        if (!records.some(existing => existing.bookingId === r.bookingId)) {
+          records.unshift(r);
+        }
+      });
+    }
+
     if (!this.isProduction) {
-      return DEMO_PATIENT_RECORDS;
+      return records;
     }
 
     try {
@@ -185,7 +229,7 @@ class GoogleSheetsService {
       });
 
       const rows = response.data.values || [];
-      return rows.map(r => ({
+      const sheetRecords = rows.map(r => ({
         timestamp: r[0],
         bookingId: r[1],
         patientName: r[2],
@@ -198,14 +242,17 @@ class GoogleSheetsService {
         doctorAlertSent: r[9],
         status: r[10] || "ACTIVE"
       }));
+
+      return [...sheetRecords, ...records.filter(r => !sheetRecords.some(s => s.bookingId === r.bookingId))];
     } catch (error) {
       console.error("Failed to read Google Sheets:", error.message);
-      return DEMO_PATIENT_RECORDS;
+      return records;
     }
   }
 
   clearAllRecords() {
     DEMO_PATIENT_RECORDS.length = 0;
+    saveTmpBooking({ clear: true });
     return { success: true, count: 0, message: "Database reset to clean client mode." };
   }
 
