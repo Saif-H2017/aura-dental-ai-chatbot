@@ -405,10 +405,20 @@
       renderTables();
     }
 
+    function getAuthHeaders() {
+      const token = sessionStorage.getItem('aura_surgeon_token') || '';
+      return {
+        'Authorization': `Bearer ${token}`,
+        'x-surgeon-token': token,
+        'Content-Type': 'application/json'
+      };
+    }
+
     async function fetchAdminRecords() {
       try {
-        let res = await fetch('/api/admin/records');
-        if (!res.ok) res = await fetch('/api/admin/appointments');
+        const headers = getAuthHeaders();
+        let res = await fetch('/api/admin/records', { headers });
+        if (!res.ok) res = await fetch('/api/admin/appointments', { headers });
         const data = await res.json();
         allRecords = data.records || data.appointments || [];
         renderTables();
@@ -417,60 +427,31 @@
       }
     }
 
-    function renderTables() {
-      const activeList = allRecords.filter(r => r.status !== 'COMPLETED');
-      const historyList = allRecords.filter(r => r.status === 'COMPLETED');
-
-      document.getElementById('activeCount').innerText = activeList.length;
-      document.getElementById('completedCount').innerText = historyList.length;
-      document.getElementById('tabActiveNum').innerText = activeList.length;
-      document.getElementById('tabHistoryNum').innerText = historyList.length;
-
-      const urgentCount = activeList.filter(r => r.triageCategory === 'SAME_DAY_URGENT' || r.triageCategory === 'CRITICAL_EMERGENCY').length;
-      document.getElementById('urgentCount').innerText = urgentCount;
-
-      // Active Table
-      const activeTbody = document.getElementById('activeTableBody');
-      if (activeList.length === 0) {
-        activeTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #64748B;">🎉 All patient appointments have taken place! No pending bookings.</td></tr>`;
-      } else {
-        activeTbody.innerHTML = activeList.map(r => `
-          <tr id="row-${r.bookingId}">
-            <td style="text-align: center;">
-              <input type="checkbox" class="check-btn" title="Tick when appointment has taken place" onchange="markCompleted('${r.bookingId}')">
-            </td>
-            <td><code>${r.bookingId}</code></td>
-            <td><strong>${r.patientName}</strong></td>
-            <td>${r.patientPhone}<br><small style="color:#64748B">${r.patientEmail}</small></td>
-            <td>${r.date} @ ${r.time}</td>
-            <td>
-              <span class="${r.triageCategory.includes('URGENT') ? 'badge-emergency' : 'badge-routine'}">
-                ${r.triageCategory}
-              </span>
-            </td>
-            <td>${r.symptoms}</td>
-          </tr>
-        `).join('');
-      }
-
-      // History Table
-      const historyTbody = document.getElementById('historyTableBody');
-      if (historyList.length === 0) {
-        historyTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #64748B;">No past completed appointments in history yet.</td></tr>`;
-      } else {
-        historyTbody.innerHTML = historyList.map(r => `
-          <tr>
-            <td><code>${r.bookingId}</code></td>
-            <td><strong>${r.patientName}</strong></td>
-            <td>${r.patientPhone}<br><small style="color:#64748B">${r.patientEmail}</small></td>
-            <td>${r.date} @ ${r.time}</td>
-            <td>
-              <span class="badge-routine">${r.triageCategory}</span>
-            </td>
-            <td>${r.symptoms}</td>
-            <td><span class="badge-completed">✓ COMPLETED</span></td>
-          </tr>
-        `).join('');
+    async function exportPatientRecordsCSV() {
+      try {
+        const token = sessionStorage.getItem('aura_surgeon_token') || '';
+        const res = await fetch('/api/admin/export-csv', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-surgeon-token': token
+          }
+        });
+        if (!res.ok) {
+          alert("⚠️ Failed to export CSV: Authentication session invalid.");
+          return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Aura_Dental_Patient_Records_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Failed to export CSV:", err);
+        alert("Error exporting CSV: " + err.message);
       }
     }
 
@@ -484,7 +465,7 @@
       try {
         const res = await fetch('/api/admin/records/complete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ bookingId })
         });
         const data = await res.json();
@@ -502,7 +483,10 @@
       if (!confirm("Are you sure you want to permanently delete all completed appointment history?")) return;
 
       try {
-        const res = await fetch('/api/admin/records/history', { method: 'DELETE' });
+        const res = await fetch('/api/admin/records/history', { 
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success) {
           allRecords = allRecords.filter(r => r.status !== 'COMPLETED');
@@ -516,7 +500,10 @@
     async function purgeDemoRecords() {
       if (!confirm("Start Clean Client Mode? This will remove sample demo patient records so your client receives a 100% clean database.")) return;
       try {
-        const res = await fetch('/api/admin/records/purge-demo', { method: 'POST' });
+        const res = await fetch('/api/admin/records/purge-demo', { 
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success) {
           allRecords = [];
@@ -529,7 +516,10 @@
 
     async function restoreDemoRecords() {
       try {
-        const res = await fetch('/api/admin/records/restore-demo', { method: 'POST' });
+        const res = await fetch('/api/admin/records/restore-demo', { 
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success) {
           await fetchAdminRecords();
@@ -552,16 +542,17 @@
       try {
         const res = await fetch('/api/admin/calendar-config', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ calendarId })
         });
         const data = await res.json();
         if (data.success) {
           statusDiv.style.color = '#4285F4';
           statusDiv.innerText = `✅ Connected to Google Calendar (${calendarId})! 1-Click Calendar Add & Email Invites active.`;
+          document.getElementById('gcalEmailInput').value = '';
         } else {
           statusDiv.style.color = 'var(--emergency-red)';
-          statusDiv.innerText = '❌ Error connecting Google Calendar: ' + data.error;
+          statusDiv.innerText = '❌ Error connecting Google Calendar: ' + (data.error || 'Unauthorized');
         }
       } catch (e) {
         statusDiv.style.color = 'var(--emergency-red)';
@@ -582,16 +573,17 @@
       try {
         const res = await fetch('/api/admin/resend-config', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ resendApiKey })
         });
         const data = await res.json();
         if (data.success) {
           statusDiv.style.color = 'var(--routine-green)';
-          statusDiv.innerText = '✅ Resend Dual Email Connected! Live emails will deliver to Patient & Doctor!';
+          statusDiv.innerText = '✅ Resend Dual Email Connected! Live emails stored server-side!';
+          document.getElementById('resendKeyInput').value = '';
         } else {
           statusDiv.style.color = 'var(--emergency-red)';
-          statusDiv.innerText = '❌ Error saving Resend Key: ' + data.error;
+          statusDiv.innerText = '❌ Error saving Resend Key: ' + (data.error || 'Unauthorized');
         }
       } catch (e) {
         statusDiv.style.color = 'var(--emergency-red)';
@@ -611,17 +603,17 @@
       try {
         const res = await fetch('/api/admin/config', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ apiKey })
         });
         const data = await res.json();
         if (data.success) {
           statusDiv.style.color = 'var(--routine-green)';
-          statusDiv.innerText = '✅ Gemini API key saved! Live AI engine is now active.';
+          statusDiv.innerText = '✅ Gemini API key saved server-side! Live AI engine is active.';
           document.getElementById('geminiKeyInput').value = '';
         } else {
           statusDiv.style.color = 'var(--emergency-red)';
-          statusDiv.innerText = '⚠️ Error saving key: ' + data.error;
+          statusDiv.innerText = '⚠️ Error saving key: ' + (data.error || 'Unauthorized');
         }
       } catch (e) {
         statusDiv.style.color = 'var(--emergency-red)';

@@ -51,6 +51,19 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
+const VALID_SURGEON_TOKEN = process.env.SURGEON_SESSION_TOKEN || "AUTH_SURGEON_GRANTED_SESSION_TOKEN_678";
+
+function requireSurgeonAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const tokenHeader = req.headers['x-surgeon-token'] || req.query.token || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '') || tokenHeader;
+  
+  if (token === VALID_SURGEON_TOKEN) {
+    return next();
+  }
+  return res.status(401).json({ success: false, error: "Unauthorized access: Surgeon authentication required." });
+}
+
 // API: Surgeon Login Authentication
 app.post('/api/admin/login', (req, res) => {
   const { email, password } = req.body;
@@ -61,7 +74,7 @@ app.post('/api/admin/login', (req, res) => {
     console.log(`🔐 Surgeon Login Granted for ${email}`);
     return res.json({
       success: true,
-      token: "AUTH_SURGEON_GRANTED_SESSION_TOKEN_678",
+      token: VALID_SURGEON_TOKEN,
       user: { name: "Dr. Alexander Wright / Muhammad Saif", email: AUTHORIZED_EMAIL }
     });
   }
@@ -70,8 +83,39 @@ app.post('/api/admin/login', (req, res) => {
   return res.status(401).json({ success: false, error: "Invalid surgeon email or password." });
 });
 
+// API: Authenticated On-Demand Patient Records CSV Export
+app.get('/api/admin/export-csv', requireSurgeonAuth, async (req, res) => {
+  try {
+    const records = await googleSheetsService.getAllAppointments();
+    
+    const headers = ["Booking Ref", "Patient Name", "Phone", "Email", "Date", "Time", "Triage Category", "Symptoms & Notes", "Status", "Timestamp"];
+    const rows = records.map(r => [
+      `"${(r.bookingId || '').replace(/"/g, '""')}"`,
+      `"${(r.patientName || '').replace(/"/g, '""')}"`,
+      `"${(r.patientPhone || '').replace(/"/g, '""')}"`,
+      `"${(r.patientEmail || '').replace(/"/g, '""')}"`,
+      `"${(r.date || '').replace(/"/g, '""')}"`,
+      `"${(r.time || '').replace(/"/g, '""')}"`,
+      `"${(r.triageCategory || r.triageLevel || '').replace(/"/g, '""')}"`,
+      `"${(r.symptoms || '').replace(/"/g, '""')}"`,
+      `"${(r.status || 'ACTIVE').replace(/"/g, '""')}"`,
+      `"${(r.timestamp || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="Aura_Dental_Patient_Records.csv"');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.send(csvContent);
+  } catch (err) {
+    console.error("Error generating CSV export:", err);
+    res.status(500).json({ error: "Failed to generate CSV export" });
+  }
+});
+
 // API: Save Google Calendar Credentials
-app.post('/api/admin/calendar-config', (req, res) => {
+app.post('/api/admin/calendar-config', requireSurgeonAuth, (req, res) => {
   const { calendarId, serviceAccountEmail, privateKey } = req.body;
   
   googleCalendarService.setCalendarConfig({
@@ -182,8 +226,8 @@ const getAdminAppointmentsHandler = async (req, res) => {
   const records = await googleSheetsService.getAllAppointments();
   res.json({ success: true, records, appointments: records });
 };
-app.get('/api/admin/appointments', getAdminAppointmentsHandler);
-app.get('/api/admin/records', getAdminAppointmentsHandler);
+app.get('/api/admin/appointments', requireSurgeonAuth, getAdminAppointmentsHandler);
+app.get('/api/admin/records', requireSurgeonAuth, getAdminAppointmentsHandler);
 
 // API: Complete Appointment
 const completeAppointmentHandler = async (req, res) => {
@@ -193,8 +237,8 @@ const completeAppointmentHandler = async (req, res) => {
   const result = await googleSheetsService.completeAppointment(id);
   res.json({ success: true, id, result });
 };
-app.post('/api/admin/appointments/complete', completeAppointmentHandler);
-app.post('/api/admin/records/complete', completeAppointmentHandler);
+app.post('/api/admin/appointments/complete', requireSurgeonAuth, completeAppointmentHandler);
+app.post('/api/admin/records/complete', requireSurgeonAuth, completeAppointmentHandler);
 
 // API: Delete Completed History
 const deleteHistoryHandler = async (req, res) => {
@@ -202,31 +246,44 @@ const deleteHistoryHandler = async (req, res) => {
   const count = (result && (result.deletedCount || result.count)) || 0;
   res.json({ success: true, count, deletedCount: count });
 };
-app.post('/api/admin/appointments/delete-history', deleteHistoryHandler);
-app.post('/api/admin/records/history', deleteHistoryHandler);
-app.delete('/api/admin/records/history', deleteHistoryHandler);
+app.post('/api/admin/appointments/delete-history', requireSurgeonAuth, deleteHistoryHandler);
+app.post('/api/admin/records/history', requireSurgeonAuth, deleteHistoryHandler);
+app.delete('/api/admin/records/history', requireSurgeonAuth, deleteHistoryHandler);
 
 // API: Clear All Demo Records (Start Clean Client Mode)
-app.post('/api/admin/records/purge-demo', (req, res) => {
+app.post('/api/admin/records/purge-demo', requireSurgeonAuth, (req, res) => {
   const result = googleSheetsService.clearAllRecords();
   res.json(result);
 });
 
 // API: Restore Sample Demo Records
-app.post('/api/admin/records/restore-demo', (req, res) => {
+app.post('/api/admin/records/restore-demo', requireSurgeonAuth, (req, res) => {
   const result = googleSheetsService.restoreDemoRecords();
   res.json(result);
 });
 
-// API: Save Dynamic Gemini API Key
-app.post('/api/admin/config', (req, res) => {
-  const { geminiKey } = req.body;
-  if (geminiKey) {
-    geminiService.setApiKey(geminiKey);
-    process.env.GEMINI_API_KEY = geminiKey;
-    res.json({ success: true, message: "Gemini API key updated successfully!" });
+// API: Save Dynamic Gemini API Key (Stored server-side only)
+app.post('/api/admin/config', requireSurgeonAuth, (req, res) => {
+  const { geminiKey, apiKey } = req.body;
+  const targetKey = geminiKey || apiKey;
+  if (targetKey) {
+    geminiService.setApiKey(targetKey);
+    process.env.GEMINI_API_KEY = targetKey;
+    res.json({ success: true, message: "Gemini API key updated server-side successfully!" });
   } else {
     res.status(400).json({ error: "Invalid API key" });
+  }
+});
+
+// API: Save Dynamic Resend API Key (Stored server-side only)
+app.post('/api/admin/resend-config', requireSurgeonAuth, (req, res) => {
+  const { resendApiKey } = req.body;
+  if (resendApiKey) {
+    notificationService.setResendApiKey(resendApiKey);
+    process.env.RESEND_API_KEY = resendApiKey;
+    res.json({ success: true, message: "Resend API key stored server-side successfully!" });
+  } else {
+    res.status(400).json({ error: "Invalid Resend API key" });
   }
 });
 
@@ -262,6 +319,11 @@ app.post('/api/admin/callback', async (req, res) => {
     console.error("Error handling callback request:", err);
     res.status(500).json({ error: "Failed to process callback" });
   }
+});
+
+// Express 404 guard for direct static CSV file requests
+app.get('/*.csv', (req, res) => {
+  res.status(404).json({ error: "404 Not Found - Direct static CSV access disabled" });
 });
 
 // Catch-all route to serve fresh index.html

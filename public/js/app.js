@@ -2,30 +2,53 @@ let chatHistory = [];
 let currentBookingDraft = {};
 let recognition = null;
 
-// Dynamic Real-World Slot Fetcher (PKT Synced)
+// Dynamic Real-World Slot Fetcher (Europe/London UK Time Synced)
 async function loadLiveRealWorldSlots() {
+  const select = document.getElementById('slotSelect');
+  const chipsGrid = document.querySelector('.slot-chips-grid');
+
   try {
-    const res = await fetch('/api/slots');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch('/api/slots', { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const data = await res.json();
     const slots = data.slots || [];
     
-    // Populate Modal Dropdown
-    const select = document.getElementById('slotSelect');
-    if (select && slots.length > 0) {
-      select.innerHTML = slots.map(s => `
-        <option value="${s.date}|${s.time}">${s.display || s.shortLabel}</option>
-      `).join('');
-    }
+    if (slots.length > 0) {
+      if (select) {
+        select.innerHTML = slots.map(s => `
+          <option value="${s.date}|${s.time}">${s.display || s.shortLabel}</option>
+        `).join('');
+      }
 
-    // Populate Hero Chips
-    const chipsGrid = document.querySelector('.slot-chips-grid');
-    if (chipsGrid && slots.length > 0) {
-      chipsGrid.innerHTML = slots.slice(0, 4).map(s => `
-        <button class="slot-chip-btn" onclick="selectSlotAndBook('${s.date}', '${s.time}')">${s.shortLabel || s.display}</button>
-      `).join('');
+      if (chipsGrid) {
+        chipsGrid.innerHTML = slots.slice(0, 4).map(s => `
+          <button class="slot-chip-btn" onclick="selectSlotAndBook('${s.date}', '${s.time}')">${s.shortLabel || s.display}</button>
+        `).join('');
+      }
+    } else {
+      throw new Error("No open slots returned");
     }
   } catch (e) {
-    console.error("Failed to load live slots:", e);
+    console.warn("Unable to fetch live calendar slots:", e.message);
+    
+    if (select) {
+      select.innerHTML = `<option value="">⚠️ Live slots unavailable - Book via 24/7 AI Concierge</option>`;
+    }
+    
+    if (chipsGrid) {
+      chipsGrid.innerHTML = `
+        <div style="background:#FEF3C7; border:1px solid #F59E0B; color:#92400E; padding:0.6rem 1rem; border-radius:12px; font-size:0.82rem; font-weight:600; display:flex; align-items:center; justify-content:space-between; width:100%; gap:0.5rem;">
+          <span>⚠️ Live slot calendar sync unavailable right now</span>
+          <button onclick="loadLiveRealWorldSlots()" style="background:#D97706; color:white; border:none; padding:0.3rem 0.6rem; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">Retry ↺</button>
+        </div>
+      `;
+    }
   }
 }
 

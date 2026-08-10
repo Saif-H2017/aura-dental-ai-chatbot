@@ -88,7 +88,7 @@ module.exports = `<!DOCTYPE html>
         </div>
 
         <div class="card-title-pill">
-          <span>📅 Next Available Appointments (PKT Real-Time)</span>
+          <span>📅 Next Available Appointments (UK Time Real-Time)</span>
           <div class="live-indicator">
             <div class="live-dot"></div> Live Calendar Sync
           </div>
@@ -313,7 +313,7 @@ module.exports = `<!DOCTYPE html>
             <input type="email" id="patientEmail" placeholder="patient@example.co.uk" required>
           </div>
           <div class="form-group">
-            <label for="slotSelect">Select Date & Time Slot (Real-World PKT Synced)</label>
+            <label for="slotSelect">Select Date & Time Slot (Real-World UK Time Synced)</label>
             <select id="slotSelect" required>
               <option value="">Loading Real-World Slots...</option>
             </select>

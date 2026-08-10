@@ -1,114 +1,131 @@
-// STRICT REAL-WORLD CLOCK ENGINE (Past-Time Filtered Synced to PKT UTC+5)
+// STRICT REAL-WORLD CLOCK ENGINE (Europe/London UK Time GMT/BST)
+
+function getLondonTimeComponents(date = new Date()) {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  const parts = {};
+  formatter.formatToParts(date).forEach(p => {
+    if (p.type !== 'literal') parts[p.type] = p.value;
+  });
+
+  return {
+    year: parseInt(parts.year, 10),
+    month: parseInt(parts.month, 10),
+    day: parseInt(parts.day, 10),
+    hour: parseInt(parts.hour, 10),
+    minute: parseInt(parts.minute, 10),
+    isoDate: `${parts.year}-${parts.month}-${parts.day}`
+  };
+}
 
 function getLiveRealWorldSlots() {
   const now = new Date();
-  
-  // Force Pakistan Time (UTC + 5 Hours)
-  const pktMs = now.getTime() + (5 * 60 * 60 * 1000);
-  const pktNow = new Date(pktMs);
+  const londonNow = getLondonTimeComponents(now);
 
-  const currentHour = pktNow.getUTCHours(); // e.g. 21 (9 PM)
-  const currentMin = pktNow.getUTCMinutes();
-
-  // Helper to extract YYYY-MM-DD in PKT
   const formatIsoDate = (d) => {
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return getLondonTimeComponents(d).isoDate;
   };
 
-  // Helper for readable day label (e.g. "Sun, Aug 9")
   const formatReadableDay = (d) => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    }).format(d);
   };
 
   const allPossibleSlots = [];
 
-  // Determine if Today still has upcoming slots (e.g. 7:30 PM slot = hour 19.5)
-  // If current hour is >= 19 (7 PM), today's 7:30 PM slot has passed or is too close!
-  const todayIso = formatIsoDate(pktNow);
-  const todayLabel = formatReadableDay(pktNow);
+  const todayIso = londonNow.isoDate;
+  const todayLabel = formatReadableDay(now);
 
-  if (currentHour < 18) {
+  // If London hour < 17 (5 PM), today's 5:30 PM slot is still available
+  if (londonNow.hour < 17) {
     allPossibleSlots.push({
-      id: `slot-pkt-today`,
+      id: `slot-uk-today`,
       date: todayIso,
-      time: "07:30 PM",
-      display: `Today (${todayLabel}) at 7:30 PM PKT`,
-      shortLabel: `Today (${todayLabel}) at 7:30 PM`,
+      time: "05:30 PM",
+      display: `Today (${todayLabel}) at 5:30 PM UK Time`,
+      shortLabel: `Today (${todayLabel}) at 5:30 PM`,
       urgentOnly: false
     });
   }
 
   // Tomorrow (+1 day)
-  const tomorrowObj = new Date(pktMs + (24 * 60 * 60 * 1000));
+  const tomorrowObj = new Date(now.getTime() + (24 * 60 * 60 * 1000));
   const tomorrowIso = formatIsoDate(tomorrowObj);
   const tomorrowLabel = formatReadableDay(tomorrowObj);
 
   allPossibleSlots.push(
     {
-      id: `slot-pkt-tom-1`,
+      id: `slot-uk-tom-1`,
       date: tomorrowIso,
       time: "10:00 AM",
-      display: `Tomorrow (${tomorrowLabel}) at 10:00 AM PKT`,
+      display: `Tomorrow (${tomorrowLabel}) at 10:00 AM UK Time`,
       shortLabel: `Tomorrow (${tomorrowLabel}) at 10:00 AM`,
       urgentOnly: false
     },
     {
-      id: `slot-pkt-tom-2`,
+      id: `slot-uk-tom-2`,
       date: tomorrowIso,
       time: "02:15 PM",
-      display: `Tomorrow (${tomorrowLabel}) at 2:15 PM PKT`,
+      display: `Tomorrow (${tomorrowLabel}) at 2:15 PM UK Time`,
       shortLabel: `Tomorrow (${tomorrowLabel}) at 2:15 PM`,
       urgentOnly: false
     },
     {
-      id: `slot-pkt-tom-3`,
+      id: `slot-uk-tom-3`,
       date: tomorrowIso,
       time: "04:30 PM",
-      display: `Tomorrow (${tomorrowLabel}) at 4:30 PM PKT`,
+      display: `Tomorrow (${tomorrowLabel}) at 4:30 PM UK Time`,
       shortLabel: `Tomorrow (${tomorrowLabel}) at 4:30 PM`,
       urgentOnly: false
     }
   );
 
   // Day After Tomorrow (+2 days)
-  const dayAfterObj = new Date(pktMs + (2 * 24 * 60 * 60 * 1000));
+  const dayAfterObj = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
   const dayAfterIso = formatIsoDate(dayAfterObj);
   const dayAfterLabel = formatReadableDay(dayAfterObj);
 
   allPossibleSlots.push(
     {
-      id: `slot-pkt-day2-1`,
+      id: `slot-uk-day2-1`,
       date: dayAfterIso,
       time: "11:30 AM",
-      display: `${dayAfterLabel} at 11:30 AM PKT`,
+      display: `${dayAfterLabel} at 11:30 AM UK Time`,
       shortLabel: `${dayAfterLabel} at 11:30 AM`,
       urgentOnly: false
     },
     {
-      id: `slot-pkt-day2-2`,
+      id: `slot-uk-day2-2`,
       date: dayAfterIso,
       time: "03:30 PM",
-      display: `${dayAfterLabel} at 3:30 PM PKT`,
+      display: `${dayAfterLabel} at 3:30 PM UK Time`,
       shortLabel: `${dayAfterLabel} at 3:30 PM`,
       urgentOnly: false
     }
   );
 
   // Day 3 (+3 days)
-  const day3Obj = new Date(pktMs + (3 * 24 * 60 * 60 * 1000));
+  const day3Obj = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
   const day3Iso = formatIsoDate(day3Obj);
   const day3Label = formatReadableDay(day3Obj);
 
   allPossibleSlots.push({
-    id: `slot-pkt-day3-1`,
+    id: `slot-uk-day3-1`,
     date: day3Iso,
     time: "01:00 PM",
-    display: `${day3Label} at 1:00 PM PKT`,
+    display: `${day3Label} at 1:00 PM UK Time`,
     shortLabel: `${day3Label} at 1:00 PM`,
     urgentOnly: false
   });
@@ -152,7 +169,7 @@ class GoogleCalendarService {
         this.isProduction = false;
       }
     } else {
-      console.log("ℹ️ Google Calendar running in Strict Past-Time Filtered PKT Mode.");
+      console.log("ℹ️ Google Calendar running in Strict Past-Time Filtered Europe/London Mode.");
     }
   }
 

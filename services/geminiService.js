@@ -270,7 +270,7 @@ If the patient mentions severe pain, toothache, broken tooth, bleeding, swelling
     ) {
       const formattedSlots = liveSlots.map((s, idx) => `• **Option ${idx + 1}**: ${s.display}`).join('\n');
       return {
-        reply: `📅 **Live Real-World Available Slots at Aura Dental Studio (PKT)**:\n\n${formattedSlots}\n\nWhich option (1, 2, 3, 4, or 5) works best for you?`,
+        reply: `📅 **Live Real-World Available Slots at Aura Dental Studio (UK Time)**:\n\n${formattedSlots}\n\nWhich option (1, 2, 3, 4, or 5) works best for you?`,
         triage,
         suggestSlots: true
       };

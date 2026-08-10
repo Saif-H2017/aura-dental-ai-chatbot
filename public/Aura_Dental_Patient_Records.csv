@@ -1,6 +1,0 @@
-Timestamp,Booking ID,Patient Name,Phone Number,Email Address,Triage Category,Symptoms & Pain Notes,Appointment Date,Appointment Time,Doctor Mobile Alert,Status
-2026-08-07T14:20:00Z,LND-DEN-882103,Sarah Jenkins,+44 7700 900123,sarah.j@example.co.uk,SAME_DAY_URGENT,Severe throbbing pain in upper right molar (Score 8/10),2026-08-08,11:00 AM,YES (Priority SMS & WhatsApp),CONFIRMED
-2026-08-07T15:05:12Z,LND-DEN-491204,Marcus Vance,+44 7911 123456,marcus.v@example.co.uk,ROUTINE_CARE,Routine consultation & hygiene airflow cleaning,2026-08-08,02:15 PM,YES (Standard Notification),CONFIRMED
-2026-08-07T16:11:45Z,LND-DEN-302918,Priya Sharma,+44 7700 900888,priya.s@example.co.uk,SAME_DAY_URGENT,Chipped front incisor from accidental injury (Score 7/10),2026-08-08,03:30 PM,YES (Priority SMS & WhatsApp),CONFIRMED
-2026-08-07T17:40:02Z,LND-DEN-710293,David Miller,+44 7911 987654,david.m@example.co.uk,ROUTINE_CARE,Laser teeth whitening consultation & shade assessment,2026-08-10,10:00 AM,YES (Standard Notification),CONFIRMED
-2026-08-07T18:02:30Z,LND-DEN-951024,Emma Watson,+44 7700 912345,emma.w@example.co.uk,ROUTINE_CARE,Invisalign alignment evaluation & 3D scan,2026-08-10,11:30 AM,YES (Standard Notification),CONFIRMED
