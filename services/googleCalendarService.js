@@ -212,30 +212,50 @@ class GoogleCalendarService {
   async getAvailableSlots(isUrgent = false) {
     const liveSlots = getLiveRealWorldSlots();
 
-    if (!this.isProduction || !this.calendar) {
-      return liveSlots;
-    }
-
+    // 1. Filter out active booked appointments from googleSheetsService
+    let available = liveSlots;
     try {
-      const now = new Date();
-      const timeMax = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const googleSheetsService = require('./googleSheetsService');
+      const allBookings = await googleSheetsService.getAllAppointments();
+      const activeBookings = Array.isArray(allBookings) ? allBookings.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') : [];
 
-      const response = await this.calendar.events.list({
-        calendarId: this.calendarId,
-        timeMin: now.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime'
+      available = liveSlots.filter(slot => {
+        const isBooked = activeBookings.some(b => {
+          const dateMatch = b.date === slot.date;
+          const bTime = (b.time || '').toLowerCase().replace(/^0/, '').trim();
+          const sTime = (slot.time || '').toLowerCase().replace(/^0/, '').trim();
+          return dateMatch && bTime === sTime;
+        });
+        return !isBooked;
       });
-
-      const busyEvents = response.data.items || [];
-      const busyTimes = busyEvents.map(e => e.start.dateTime || e.start.date);
-
-      return liveSlots.filter(slot => !busyTimes.some(b => b.includes(slot.date) && b.includes(slot.time)));
-    } catch (err) {
-      console.error("Failed to sync live Google Calendar events:", err.message);
-      return liveSlots;
+    } catch (e) {
+      console.warn("Unable to check active bookings filter:", e.message);
     }
+
+    // 2. If Google Calendar API is connected, also filter out busy times from Google Calendar
+    if (this.isProduction && this.calendar) {
+      try {
+        const now = new Date();
+        const timeMax = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const response = await this.calendar.events.list({
+          calendarId: this.calendarId,
+          timeMin: now.toISOString(),
+          timeMax: timeMax.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime'
+        });
+
+        const busyEvents = response.data.items || [];
+        const busyTimes = busyEvents.map(e => e.start.dateTime || e.start.date);
+
+        available = available.filter(slot => !busyTimes.some(b => b.includes(slot.date) && b.includes(slot.time)));
+      } catch (err) {
+        console.error("Failed to sync live Google Calendar events:", err.message);
+      }
+    }
+
+    return available;
   }
 
   async bookAppointment({ patientName, patientPhone, patientEmail, date, time, triageLevel, symptoms }) {
