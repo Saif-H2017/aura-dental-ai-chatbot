@@ -281,9 +281,30 @@ document.addEventListener('keydown', (e) => {
 // Quick Slot Selection from Hero Card
 function selectSlotAndBook(date, time) {
   const select = document.getElementById('slotSelect');
-  const matchingOpt = Array.from(select.options).find(opt => opt.value.includes(date) || opt.text.includes(time));
-  if (matchingOpt) {
-    select.value = matchingOpt.value;
+  if (select && select.options.length > 0) {
+    const targetDate = (date || '').toLowerCase();
+    const targetTime = (time || '').toLowerCase();
+    const normTime = targetTime.replace(/^0/, '');
+    const targetVal = `${date}|${time}`;
+
+    let matchingOpt = Array.from(select.options).find(opt => {
+      const optVal = opt.value.toLowerCase();
+      const normOptVal = optVal.replace(/\|0/, '|');
+      const optText = opt.text.toLowerCase();
+
+      return opt.value === targetVal ||
+             normOptVal === `${targetDate}|${normTime}` ||
+             (targetDate && targetTime && optVal.includes(targetDate) && (optVal.includes(targetTime) || optVal.includes(normTime) || optText.includes(targetTime)));
+    });
+
+    if (!matchingOpt && normTime) {
+      matchingOpt = Array.from(select.options).find(opt => opt.value.toLowerCase().includes(normTime) || opt.text.toLowerCase().includes(normTime));
+    }
+
+    if (matchingOpt) {
+      select.value = matchingOpt.value;
+      console.log(`✅ Hero Card Slot Chip clicked: pre-selected "${matchingOpt.text}" (${matchingOpt.value})`);
+    }
   }
   openBookingModal();
 }
