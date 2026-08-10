@@ -454,17 +454,26 @@ async function submitFinalBooking(e) {
 
       const gcalUrl = data.gcalUrl || `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dental+Appointment&details=Aura+Dental+Studio+Appointment&location=72+Harley+Street+London`;
 
+      const mailtoSubject = encodeURIComponent(`✨ Appointment Confirmation - Aura Dental Studio London [Ref: ${data.bookingId}]`);
+      const mailtoBody = encodeURIComponent(`Hello ${name},\n\nYour appointment at Aura Dental Studio London has been successfully confirmed!\n\n📅 Date & Time: ${data.date} at ${data.time}\n📍 Location: 72 Harley Street, Marylebone, London W1G 7HG\n🔖 Booking Ref: ${data.bookingId}\n🩺 Doctor: Dr. Alexander Wright, BDS\n\nWarm regards,\nAura Dental Studio London\nPhone: +44 20 7946 0912`);
+      const mailtoUrl = `mailto:${email}?subject=${mailtoSubject}&body=${mailtoBody}`;
+
       const confirmHtml = `
 🎉 <strong>APPOINTMENT CONFIRMED AT AURA DENTAL!</strong><br><br>
 • <strong>Ref ID</strong>: <code>${data.bookingId}</code><br>
 • <strong>Patient</strong>: ${name}<br>
-• <strong>Email</strong>: ${email} (Confirmation Dispatched ✉️)<br>
+• <strong>Email</strong>: ${email} (Direct Confirmation Ready ✉️)<br>
 • <strong>Slot</strong>: ${data.date} at ${data.time}<br>
 • <strong>Clinic</strong>: 72 Harley Street, London W1G 7HG<br><br>
 
-<a href="${gcalUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; margin-top:6px; padding:10px 16px; background:#4285F4; color:#FFFFFF; font-weight:800; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(66,133,244,0.3);">
-  📅 Add to Google Calendar
-</a><br><br>
+<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+  <a href="${mailtoUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:#10B981; color:#FFFFFF; font-weight:800; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+    📩 Open Confirmation Email in Inbox
+  </a>
+  <a href="${gcalUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:#4285F4; color:#FFFFFF; font-weight:800; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(66,133,244,0.3);">
+    📅 Add to Google Calendar
+  </a>
+</div><br>
 Dr. Alexander Wright and the Aura Dental team look forward to seeing you!
       `;
 
